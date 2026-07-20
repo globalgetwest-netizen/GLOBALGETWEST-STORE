@@ -1,10 +1,17 @@
 import { createClient } from "@supabase/supabase-js"
 
+export function getSupabaseAdmin() {
 
-export const supabaseAdmin = createClient(
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  if (!url) {
+    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL")
+  }
 
-process.env.SUPABASE_SERVICE_ROLE_KEY!
+  if (!key) {
+    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY")
+  }
 
-)
+  return createClient(url, key)
+}

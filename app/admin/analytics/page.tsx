@@ -1,8 +1,9 @@
 import { supabase } from "@/lib/supabase"
-import { supabaseAdmin } from "@/lib/supabaseAdmin"
-
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
 
 export default async function AnalyticsPage() {
+
+  const supabaseAdmin = getSupabaseAdmin()
 
 
   const { count: totalProducts } = await supabase

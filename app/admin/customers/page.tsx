@@ -1,4 +1,6 @@
-import { supabaseAdmin } from "@/lib/supabaseAdmin"
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+
+const supabaseAdmin = getSupabaseAdmin()
 
 
 export default async function CustomersPage(){
