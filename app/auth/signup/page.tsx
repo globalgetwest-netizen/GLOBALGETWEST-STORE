@@ -82,7 +82,7 @@ const {error:profileError}=await supabase
 
 .from("profiles")
 
-.insert([
+.upsert([
 
 {
 

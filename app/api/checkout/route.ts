@@ -1,326 +1,92 @@
 import { NextResponse } from "next/server"
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+import { initializeTransaction } from "@/lib/paystack"
 
-
-export async function POST(req: Request) {const supabaseAdmin = getSupabaseAdmin()
+// Creates a pending order from the user's cart, then starts a Paystack
+// transaction and returns the hosted checkout URL. Stock is only reduced and
+// the cart is only cleared AFTER payment is confirmed (see lib/orders.ts).
+export async function POST(req: Request) {
+  const admin = getSupabaseAdmin()
 
   try {
-
-    const body = await req.json()
-
-    const {
-      userId
-    } = body
-
-
+    const { userId } = await req.json()
     if (!userId) {
-
-      return NextResponse.json(
-        {
-          error: "User not found"
-        },
-        {
-          status: 400
-        }
-      )
-
+      return NextResponse.json({ error: "User not found" }, { status: 400 })
     }
 
-
-
-    // Get user's cart
-
-    const {
-      data: carts,
-      error: cartError
-    } =
-    await supabaseAdmin
-
-    .from("carts")
-
-    .select(`
-      id,
-      quantity,
-      products(
-        id,
-        name,
-        price,
-        stock_quantity
-      )
-    `)
-
-    .eq(
-      "user_id",
-      userId
-    )
-
-
-
-
-    if (
-      cartError ||
-      !carts ||
-      carts.length === 0
-    ) {
-
-      return NextResponse.json(
-        {
-          error: "Cart is empty"
-        },
-        {
-          status: 400
-        }
-      )
-
+    // Buyer email (required by Paystack).
+    const { data: userRes, error: userErr } = await admin.auth.admin.getUserById(userId)
+    const email = userRes?.user?.email
+    if (userErr || !email) {
+      return NextResponse.json({ error: "Could not load your account email" }, { status: 400 })
     }
 
+    // Load the cart with product details.
+    const { data: carts, error: cartError } = await admin
+      .from("carts")
+      .select("id, quantity, products(id, name, price, stock_quantity)")
+      .eq("user_id", userId)
 
+    if (cartError || !carts || carts.length === 0) {
+      return NextResponse.json({ error: "Cart is empty" }, { status: 400 })
+    }
 
+    const line = (item: any) => (Array.isArray(item.products) ? item.products[0] : item.products)
 
-
-    // Check stock
-
+    // Stock check.
     for (const item of carts) {
-
-      const product:any = item.products[0]
-
-
-      if (
-        product.stock_quantity <
-        item.quantity
-      ) {
-
-        return NextResponse.json(
-          {
-            error:
-            `${product.name} is out of stock`
-          },
-          {
-            status:400
-          }
-        )
-
+      const product = line(item)
+      if (!product) continue
+      if (Number(product.stock_quantity) < Number(item.quantity)) {
+        return NextResponse.json({ error: `${product.name} is out of stock` }, { status: 400 })
       }
-
     }
 
+    // Total (GHS).
+    const total = carts.reduce((sum: number, item: any) => {
+      const product = line(item)
+      return sum + Number(product.price) * Number(item.quantity)
+    }, 0)
 
-
-
-
-    // Calculate total
-
-    const total =
-    carts.reduce(
-      (sum:any,item:any)=>{
-
-        const product = item.products[0]
-
-
-        return sum +
-        (
-          Number(product.price)
-          *
-          item.quantity
-        )
-
-      },
-      0
-    )
-
-
-
-
-
-
-
-    // Create order
-
-    const {
-      data:order,
-      error:orderError
-    } =
-    await supabaseAdmin
-
-    .from("orders")
-
-    .insert([
-      {
-        user_id:userId,
-        total,
-        status:"Pending",
-        payment_status:"Pending"
-      }
-    ])
-
-    .select()
-
-    .single()
-
-
-
-
-
-    if(orderError){
-
-      return NextResponse.json(
-        {
-          error:orderError.message
-        },
-        {
-          status:500
-        }
-      )
-
+    if (total <= 0) {
+      return NextResponse.json({ error: "Order total must be greater than zero" }, { status: 400 })
     }
 
+    const reference = `GGW-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
 
+    // Create the order (Pending until Paystack confirms).
+    const { data: order, error: orderError } = await admin
+      .from("orders")
+      .insert([{ user_id: userId, total, status: "Pending", payment_status: "Pending", paystack_reference: reference }])
+      .select()
+      .single()
 
+    if (orderError || !order) {
+      return NextResponse.json({ error: orderError?.message || "Could not create order" }, { status: 500 })
+    }
 
+    // Snapshot the ordered items.
+    const orderItems = carts.map((item: any) => {
+      const product = line(item)
+      return { order_id: order.id, product_id: product.id, quantity: item.quantity, price: product.price }
+    })
+    const { error: itemError } = await admin.from("order_items").insert(orderItems)
+    if (itemError) {
+      return NextResponse.json({ error: itemError.message }, { status: 500 })
+    }
 
-
-
-
-    // Create order items
-
-    const orderItems =
-    carts.map((item:any)=>{
-
-      const product = item.products[0]
-
-
-      return {
-
-        order_id:order.id,
-
-        product_id:product.id,
-
-        quantity:item.quantity,
-
-        price:product.price
-
-      }
-
+    // Start Paystack (hosted checkout: card + mobile money).
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin
+    const { authorization_url } = await initializeTransaction({
+      email,
+      amountGhs: total,
+      reference,
+      callbackUrl: `${siteUrl}/checkout/callback`,
+      metadata: { order_id: order.id, user_id: userId },
     })
 
-
-
-
-
-
-    const {
-      error:itemError
-    } =
-    await supabaseAdmin
-
-    .from("order_items")
-
-    .insert(orderItems)
-
-
-
-
-
-    if(itemError){
-
-      return NextResponse.json(
-        {
-          error:itemError.message
-        },
-        {
-          status:500
-        }
-      )
-
-    }
-
-
-
-
-
-
-
-
-    // Reduce stock
-
-    for(const item of carts){
-
-      const product = item.products[0]
-
-
-      await supabaseAdmin
-
-      .from("products")
-
-      .update({
-
-        stock_quantity:
-        product.stock_quantity -
-        item.quantity
-
-      })
-
-      .eq(
-        "id",
-        product.id
-      )
-
-    }
-
-
-
-
-
-
-
-
-    // Clear cart
-
-    await supabaseAdmin
-
-    .from("carts")
-
-    .delete()
-
-    .eq(
-      "user_id",
-      userId
-    )
-
-
-
-
-
-
-
-    return NextResponse.json({
-
-      success:true,
-
-      orderId:order.id
-
-    })
-
-
-
-
-
-  } catch(error:any){
-
-
-    return NextResponse.json(
-
-      {
-        error:error.message
-      },
-
-      {
-        status:500
-      }
-
-    )
-
-
+    return NextResponse.json({ success: true, orderId: order.id, reference, authorization_url })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Checkout failed" }, { status: 500 })
   }
-
 }
