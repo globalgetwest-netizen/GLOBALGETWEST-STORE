@@ -1,13 +1,10 @@
 "use client"
 
 import { supabase } from "@/lib/supabase"
-import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 
 export default function CheckoutPage(){
-
-const router = useRouter()
 
 const [loading,setLoading] = useState(false)
 
@@ -90,19 +87,21 @@ return
 
 
 
-setMessage(
-"Order created successfully"
-)
+// Redirect to Paystack hosted checkout (card + mobile money)
+
+if(result.authorization_url){
+
+setMessage("Redirecting to secure payment…")
+
+window.location.href = result.authorization_url
+
+return
+
+}
 
 
 
-setTimeout(()=>{
-
-router.push("/account")
-
-},2000)
-
-
+setMessage(result.error || "Could not start payment")
 
 setLoading(false)
 
