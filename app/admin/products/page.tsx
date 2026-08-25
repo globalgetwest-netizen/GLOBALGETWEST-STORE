@@ -1,335 +1,69 @@
-import { supabase } from "@/lib/supabase"
-
-
-export default async function ProductsPage(){
-
-
-
-const {data:products}=await supabase
-
-.from("products")
-
-.select(`
-
-*
-
-,
-
-categories(
-
-name
-
-)
-
-`)
-
-.order("created_at",{ascending:false})
-
-
-
-
-
-
-async function deleteProduct(id:number){
-
-
-"use server"
-
-
-await supabase
-
-.from("products")
-
-.delete()
-
-.eq("id",id)
-
-
-}
-
-
-
-
-
-return (
-
-<div>
-
-
-
-<div className="flex justify-between items-center mb-8">
-
-
-<h1 className="text-4xl font-bold text-blue-900">
-
-Products
-
-</h1>
-
-
-
-
-<a
-
-href="/admin/products/new"
-
-className="bg-blue-900 text-white px-6 py-3 rounded-xl font-bold"
-
->
-
-+ Add Product
-
-</a>
-
-
-
-</div>
-
-
-
-
-
-
-<div className="bg-white rounded-2xl shadow overflow-hidden">
-
-
-<table className="w-full">
-
-
-
-<thead className="bg-gray-100">
-
-
-<tr>
-
-
-<th className="p-4 text-left">
-Image
-</th>
-
-
-
-<th className="p-4 text-left">
-Name
-</th>
-
-
-
-<th className="p-4 text-left">
-Category
-</th>
-
-
-
-<th className="p-4 text-left">
-Price
-</th>
-
-
-
-<th className="p-4 text-left">
-Created
-</th>
-
-
-
-<th className="p-4 text-left">
-Action
-</th>
-
-
-
-</tr>
-
-
-
-</thead>
-
-
-
-
-
-
-
-<tbody>
-
-
-
-{products?.map((product)=>(
-
-
-
-<tr
-
-key={product.id}
-
-className="border-t"
-
->
-
-
-
-<td className="p-4">
-
-
-<img
-
-src={product.image || "/placeholder.png"}
-
-alt={product.name}
-
-className="w-16 h-16 rounded-lg object-cover"
-
-/>
-
-
-</td>
-
-
-
-
-
-
-<td className="p-4 font-bold">
-
-
-{product.name}
-
-
-</td>
-
-
-
-
-
-
-<td className="p-4">
-
-
-<span className="bg-blue-100 text-blue-900 px-3 py-1 rounded-full text-sm">
-
-
-{product.categories?.name || "No Category"}
-
-
-</span>
-
-
-</td>
-
-
-
-
-
-
-
-<td className="p-4 font-bold text-blue-900">
-
-
-${product.price}
-
-
-</td>
-
-
-
-
-
-
-<td className="p-4">
-
-
-{new Date(product.created_at)
-.toLocaleDateString()}
-
-
-</td>
-
-
-
-
-
-
-<td className="p-4 flex gap-3">
-
-
-
-
-
-<a
-
-href={`/admin/products/edit/${product.id}`}
-
-className="bg-yellow-400 px-4 py-2 rounded-lg"
-
->
-
-Edit
-
-</a>
-
-
-
-
-
-
-
-<form action={deleteProduct.bind(null,product.id)}>
-
-
-
-<button
-
-className="bg-red-600 text-white px-4 py-2 rounded-lg"
-
->
-
-Delete
-
-</button>
-
-
-
-</form>
-
-
-
-
-
-
-</td>
-
-
-
-
-
-</tr>
-
-
-
-
-
-))}
-
-
-
-</tbody>
-
-
-
-
-</table>
-
-
-
-</div>
-
-
-
-</div>
-
-
-)
-
-
+// app/admin/products/page.tsx
+import Link from 'next/link';
+import { requireAdmin } from '@/lib/admin/guard';
+import { formatUsd } from '@/lib/catalog';
+
+export default async function AdminProductsPage() {
+  const { supabase } = await requireAdmin();
+
+  const { data: products } = await supabase
+    .from('products')
+    .select('id, name, slug, is_active, is_featured, product_variants ( price_usd_cents )')
+    .order('created_at', { ascending: false });
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="font-display text-3xl">Products</h1>
+        <Link
+          href="/admin/products/new"
+          className="focus-ring bg-[var(--color-forest)] text-[var(--color-parchment)] font-semibold px-4 py-2 rounded-md hover:bg-[var(--color-forest-dark)]"
+        >
+          + New Product
+        </Link>
+      </div>
+
+      <div className="border border-[var(--color-border)] rounded-lg overflow-hidden bg-white/60">
+        <table className="w-full text-sm">
+          <thead className="bg-[var(--color-parchment-warm)] text-left">
+            <tr>
+              <th className="px-4 py-2.5 font-medium">Name</th>
+              <th className="px-4 py-2.5 font-medium">Price from</th>
+              <th className="px-4 py-2.5 font-medium">Status</th>
+              <th className="px-4 py-2.5 font-medium"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {(products ?? []).map((p: any) => {
+              const prices = p.product_variants.map((v: any) => v.price_usd_cents);
+              return (
+                <tr key={p.id} className="border-t border-[var(--color-border)]">
+                  <td className="px-4 py-2.5 font-medium">{p.name}</td>
+                  <td className="px-4 py-2.5">{prices.length ? formatUsd(Math.min(...prices)) : '—'}</td>
+                  <td className="px-4 py-2.5">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${p.is_active ? 'bg-[var(--color-forest)]/10 text-[var(--color-forest)]' : 'bg-[var(--color-danger)]/10 text-[var(--color-danger)]'}`}>
+                      {p.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                    {p.is_featured && (
+                      <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-[var(--color-ochre)]/15 text-[var(--color-ochre)]">
+                        Featured
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    <Link href={`/admin/products/${p.id}/edit`} className="focus-ring text-[var(--color-forest)] hover:underline">
+                      Edit
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
+            {(!products || products.length === 0) && (
+              <tr><td colSpan={4} className="px-4 py-8 text-center text-[var(--color-ink-soft)]">No products yet.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
