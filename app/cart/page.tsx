@@ -1,197 +1,68 @@
-﻿"use client"
+// app/cart/page.tsx
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { supabaseServerClient } from '@/lib/supabase/server';
+import { formatUsd } from '@/lib/catalog';
+import { CartItemRow } from '@/components/CartItemRow';
 
-import { useEffect, useState } from "react"
+export default async function CartPage() {
+  const supabase = await supabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-export default function CartPage() {
-  const [carts, setCarts] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [userId, setUserId] = useState<string | null>(null)
-
-  async function getCart() {
-    try {
-      const response = await fetch("/api/cart", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-      })
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          setLoading(false)
-          return
-        }
-        throw new Error(`Failed to fetch cart: ${response.status}`)
-      }
-
-      const data = await response.json()
-      setCarts(data.items || [])
-      setLoading(false)
-    } catch (error) {
-      console.error("Error fetching cart:", error)
-      setLoading(false)
-    }
+  if (!user) {
+    redirect('/account/sign-in?next=/cart');
   }
 
-  async function updateQuantity(cartId: number, quantity: number) {
-    if (quantity < 1) {
-      return
-    }
+  const { data: items } = await supabase
+    .from('cart_items')
+    .select(`
+      id, quantity,
+      product_variants ( id, name, price_usd_cents, products ( name, slug, product_images ( url, sort_order ) ) )
+    `)
+    .eq('profile_id', user!.id);
 
-    try {
-      const response = await fetch("/api/cart", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ cartItemId: cartId, quantity }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to update quantity: ${response.status}`)
-      }
-
-      await getCart()
-    } catch (error) {
-      console.error("Error updating cart quantity:", error)
-    }
-  }
-
-  async function removeItem(cartId: number) {
-    try {
-      const response = await fetch("/api/cart", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ cartItemId: cartId }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to remove item: ${response.status}`)
-      }
-
-      await getCart()
-    } catch (error) {
-      console.error("Error removing cart item:", error)
-    }
-  }
-
-  useEffect(() => {
-    getCart()
-  }, [])
-
-  const total = carts.reduce(
-    (sum, item) => {
-      return sum + Number(item.product.price) * Number(item.quantity)
-    },
-    0
-  )
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <h1 className="text-3xl font-bold text-blue-900">
-          Loading Cart...
-        </h1>
-      </div>
-    )
-  }
-
-  if (!userId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-blue-900">
-            Please Login To View Cart
-          </h1>
-          <a
-            href="/auth/login"
-            className="inline-block mt-6 bg-yellow-400 px-8 py-3 rounded-xl font-bold"
-          >
-            Login
-          </a>
-        </div>
-      </div>
-    )
-  }
+  const cartItems = items ?? [];
+  const subtotal = cartItems.reduce(
+    (sum, item: any) => sum + item.product_variants.price_usd_cents * item.quantity,
+    0,
+  );
 
   return (
-    <main className="min-h-screen bg-gray-100 p-8">
-      <div className="lg:col-span-2 space-y-5">
-        {carts.length > 0 ? (
-          carts.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white rounded-2xl shadow p-5 flex gap-6"
-            >
-              <img
-                src={item.product.image || "/placeholder.png"}
-                alt={item.product.name}
-                className="w-32 h-32 object-cover rounded-xl"
-              />
-              <div className="flex-1">
-                <h2 className="text-xl font-bold text-blue-900">
-                  {item.product.name}
-                </h2>
-                <p className="text-green-700 font-bold mt-2">
-                  GHâ‚µ{item.product.price}
-                </p>
-                <div className="flex gap-4 items-center mt-5">
-                  <button
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    className="bg-gray-200 px-4 py-2 rounded"
-                  >
-                    -
-                  </button>
-                  <span className="font-bold">{item.quantity}</span>
-                  <button
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    className="bg-gray-200 px-4 py-2 rounded"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-              <div className="flex gap-4 items-center mt-5">
-                <button
-                  onClick={() => removeItem(item.id)}
-                  className="mt-5 bg-red-600 text-white px-5 py-2 rounded"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="bg-white p-10 rounded-xl text-center">
-            <h2 className="text-2xl font-bold text-gray-600">
-              Your cart is empty
-            </h2>
-          </div>
-        )}
-      </div>
+    <div className="mx-auto max-w-5xl px-4 py-10">
+      <h1 className="font-display text-3xl mb-8">Your Cart</h1>
 
-      <div className="bg-white rounded-2xl shadow p-8 h-fit">
-        <h2 className="text-2xl font-bold text-blue-900 mb-6">
-          Order Summary
-        </h2>
-        <div className="flex justify-between text-lg">
-          <span>Total:</span>
-          <span className="font-bold text-green-700">GHâ‚µ{total}</span>
+      {cartItems.length === 0 ? (
+        <div className="text-center py-16">
+          <p className="text-[var(--color-ink-soft)] mb-4">Your cart is empty.</p>
+          <Link href="/products" className="focus-ring text-[var(--color-forest)] font-medium hover:underline">
+            Continue shopping →
+          </Link>
         </div>
-        <div className="mt-6">
-          <a
-            href="/checkout"
-            className="mt-8 block text-center w-full bg-yellow-400 py-4 rounded-xl font-bold"
-          >
-            Proceed To Checkout
-          </a>
+      ) : (
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="md:col-span-2 space-y-4">
+            {cartItems.map((item: any) => (
+              <CartItemRow key={item.id} item={item} />
+            ))}
+          </div>
+
+          <div className="border border-[var(--color-border)] rounded-lg p-5 h-fit bg-white/60">
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-[var(--color-ink-soft)]">Subtotal</span>
+              <span className="font-medium">{formatUsd(subtotal)}</span>
+            </div>
+            <p className="text-xs text-[var(--color-ink-soft)] mb-4">
+              Shipping and any applicable taxes calculated at checkout.
+            </p>
+            <Link
+              href="/checkout"
+              className="focus-ring block text-center bg-[var(--color-forest)] text-[var(--color-parchment)] font-semibold px-6 py-3 rounded-md hover:bg-[var(--color-forest-dark)] transition-colors"
+            >
+              Proceed to Checkout
+            </Link>
+          </div>
         </div>
-      </div>
-    </main>
-  )
+      )}
+    </div>
+  );
 }
