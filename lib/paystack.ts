@@ -1,5 +1,5 @@
-// Paystack server helpers (Ghana: cards + mobile money).
-// Uses the secret key — import this ONLY from server code (API routes).
+﻿// Paystack server helpers (International: cards).
+// Uses the secret key â€” import this ONLY from server code (API routes).
 
 const PAYSTACK_BASE = "https://api.paystack.co"
 
@@ -11,7 +11,7 @@ function secret(): string {
 
 export type InitParams = {
   email: string
-  amountGhs: number // amount in GHS (major units)
+  amountUsd: number // amount in USD (major units)
   reference: string
   callbackUrl: string
   metadata?: Record<string, unknown>
@@ -31,8 +31,8 @@ export async function initializeTransaction(p: InitParams): Promise<{
     },
     body: JSON.stringify({
       email: p.email,
-      amount: Math.round(p.amountGhs * 100), // pesewas
-      currency: "GHS",
+      amount: Math.round(p.amountUsd * 100), // pesewas
+      currency: "USD",
       reference: p.reference,
       callback_url: p.callbackUrl,
       metadata: p.metadata ?? {},
@@ -50,7 +50,7 @@ export async function initializeTransaction(p: InitParams): Promise<{
 // Confirm a transaction with Paystack (source of truth).
 export async function verifyTransaction(reference: string): Promise<{
   paid: boolean
-  amountGhs: number
+  amountUsd: number
   currency: string
   raw: unknown
 }> {
@@ -65,8 +65,9 @@ export async function verifyTransaction(reference: string): Promise<{
   const data = json.data
   return {
     paid: data.status === "success",
-    amountGhs: (data.amount ?? 0) / 100,
+    amountUsd: (data.amount ?? 0) / 100,
     currency: data.currency,
     raw: data,
   }
 }
+

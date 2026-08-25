@@ -1,193 +1,72 @@
-"use client"
+﻿"use client"
 
-import { supabase } from "@/lib/supabase"
 import { useState } from "react"
-
-
-export default function CheckoutPage(){
-
-const [loading,setLoading] = useState(false)
-
-const [message,setMessage] = useState("")
-
-
-
-async function checkout(){
-
-setLoading(true)
-
-setMessage("")
-
-
-
-// Get logged in user
-
-const {
-data:{
-user
-}
-
-}=await supabase.auth.getUser()
-
-
-
-if(!user){
-
-setMessage("Please login before checkout")
-
-setLoading(false)
-
-return
-
-}
-
-
-
-
-
-// Call secure checkout API
-
-const response = await fetch(
-"/api/checkout",
-{
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-body:JSON.stringify({
-
-userId:user.id
-
-})
-
-}
-
-)
-
-
-
-const result = await response.json()
-
-
-
-if(!response.ok){
-
-setMessage(
-result.error || "Checkout failed"
-)
-
-setLoading(false)
-
-return
-
-}
-
-
-
-
-// Redirect to Paystack hosted checkout (card + mobile money)
-
-if(result.authorization_url){
-
-setMessage("Redirecting to secure payment…")
-
-window.location.href = result.authorization_url
-
-return
-
-}
-
-
-
-setMessage(result.error || "Could not start payment")
-
-setLoading(false)
-
-
-}
-
-
-
-
-
-return(
-
-<main className="min-h-screen bg-gray-100 flex items-center justify-center p-8">
-
-
-<div className="bg-white rounded-3xl shadow-xl p-10 text-center max-w-lg">
-
-
-<h1 className="text-4xl font-bold text-blue-900">
-
-Checkout
-
-</h1>
-
-
-
-
-<p className="mt-5 text-gray-600">
-
-Complete your order securely.
-
-</p>
-
-
-
-
-<button
-
-onClick={checkout}
-
-disabled={loading}
-
-className="mt-8 bg-yellow-400 px-10 py-4 rounded-xl font-bold"
-
->
-
-{
-
-loading
-
-?
-
-"Processing..."
-
-:
-
-"Place Order"
-
-}
-
-</button>
-
-
-
-
-
-{
-
-message &&
-
-<p className="mt-6 font-semibold text-blue-900">
-
-{message}
-
-</p>
-
-}
-
-
-
-</div>
-
-
-</main>
-
-)
-
-
+import { useUser } from "@clerk/nextjs"
+import { useRouter } from "next/navigation"
+
+export default function CheckoutPage() {
+  const { user, isLoaded } = useUser()
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState("")
+
+  async function checkout() {
+    setLoading(true)
+    setMessage("")
+
+    if (!isLoaded || !user) {
+      setMessage("Please login before checkout")
+      setLoading(false)
+      return
+    }
+
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setMessage(result.error || "Checkout failed")
+        setLoading(false)
+        return
+      }
+
+      if (result.authorization_url) {
+        setMessage("Redirecting to secure payment…")
+        window.location.href = result.authorization_url
+        return
+      }
+
+      setMessage(result.error || "Could not start payment")
+      setLoading(false)
+    } catch (err) {
+      setMessage("An unexpected error occurred")
+      setLoading(false)
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-gray-100 flex items-center justify-center p-8">
+      <div className="bg-white rounded-3xl shadow-xl p-10 text-center max-w-lg">
+        <h1 className="text-4xl font-bold text-blue-900">Checkout</h1>
+        <p className="mt-5 text-gray-600">Complete your order securely.</p>
+        <button
+          onClick={checkout}
+          disabled={loading}
+          className="mt-8 bg-yellow-400 px-10 py-4 rounded-xl font-bold"
+        >
+          {loading ? "Processing..." : "Place Order"}
+        </button>
+        {message && (
+          <p className="mt-6 font-semibold text-blue-900">{message}</p>
+        )}
+      </div>
+    </main>
+  )
 }

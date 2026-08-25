@@ -1,50 +1,35 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
+import { useUser } from "@clerk/nextjs"
 
-// Client-side gate for the /admin area: only users whose profile role is
-// 'admin' get in; everyone else is redirected. The real enforcement is the
-// Row Level Security policies in supabase/schema.sql — this is the UX layer.
+// Client-side gate for the /admin area: only users whose role is
+// 'admin' get in; everyone else is redirected.
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const { user, isLoaded, isSignedIn } = useUser()
   const [status, setStatus] = useState<"checking" | "ok" | "denied">("checking")
 
   useEffect(() => {
-    let active = true
+    if (!isLoaded) return
 
-    async function check() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        router.replace("/auth/login")
-        return
-      }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .single()
-
-      if (!active) return
-
-      if (profile?.role === "admin") {
-        setStatus("ok")
-      } else {
-        setStatus("denied")
-        router.replace("/")
-      }
+    if (!isSignedIn) {
+      router.replace("/auth/login")
+      return
     }
 
-    check()
-    return () => {
-      active = false
+    // Clerk users can have roles in publicMetadata or organization membership.
+    // Assuming role is stored in publicMetadata for now.
+    const role = user.publicMetadata.role as string
+
+    if (role === "admin") {
+      setStatus("ok")
+    } else {
+      setStatus("denied")
+      router.replace("/")
     }
-  }, [router])
+  }, [isLoaded, isSignedIn, user, router])
 
   if (status !== "ok") {
     return (

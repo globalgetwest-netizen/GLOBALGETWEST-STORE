@@ -1,92 +1,171 @@
-import { NextResponse } from "next/server"
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin"
+﻿import { NextResponse } from "next/server"
+import { getPrisma } from "@/lib/prisma"
 import { initializeTransaction } from "@/lib/paystack"
+import { validateShippingAddress } from "@/lib/shipping"
+import { currentUser } from "@clerk/nextjs/server"
 
 // Creates a pending order from the user's cart, then starts a Paystack
 // transaction and returns the hosted checkout URL. Stock is only reduced and
 // the cart is only cleared AFTER payment is confirmed (see lib/orders.ts).
 export async function POST(req: Request) {
-  const admin = getSupabaseAdmin()
+  const prisma = getPrisma()
 
   try {
-    const { userId } = await req.json()
-    if (!userId) {
-      return NextResponse.json({ error: "User not found" }, { status: 400 })
+    const user = await currentUser()
+    if (!user || !user.emailAddresses[0]?.emailAddress) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Buyer email (required by Paystack).
-    const { data: userRes, error: userErr } = await admin.auth.admin.getUserById(userId)
-    const email = userRes?.user?.email
-    if (userErr || !email) {
-      return NextResponse.json({ error: "Could not load your account email" }, { status: 400 })
+    const email = user.emailAddresses[0].emailAddress
+    const { shippingAddress } = await req.json()
+
+    // Validate shipping address snapshot
+    const shippingError = validateShippingAddress(shippingAddress)
+    if (shippingError) {
+      return NextResponse.json({ error: shippingError }, { status: 400 })
+    }
+
+    // Find the customer in our Neon database by email
+    const customer = await prisma.customer.findUnique({
+      where: { email },
+    })
+
+    if (!customer) {
+      return NextResponse.json({ error: "Customer not found" }, { status: 400 })
+    }
+
+    // Get or create the cart for this customer
+    let cart = await prisma.cart.findFirst({
+      where: { customer_id: customer.id },
+    })
+
+    if (!cart) {
+      cart = await prisma.cart.create({
+        data: {
+          customer_id: customer.id,
+        },
+      })
     }
 
     // Load the cart with product details.
-    const { data: carts, error: cartError } = await admin
-      .from("carts")
-      .select("id, quantity, products(id, name, price, stock_quantity)")
-      .eq("user_id", userId)
+    const cartItems = await prisma.cartItem.findMany({
+      where: { cart_id: cart.id },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            base_price: true,
+            currency: true,
+            stock_quantity: true,
+          },
+        },
+      },
+    })
 
-    if (cartError || !carts || carts.length === 0) {
+    if (cartItems.length === 0) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 })
     }
 
-    const line = (item: any) => (Array.isArray(item.products) ? item.products[0] : item.products)
-
     // Stock check.
-    for (const item of carts) {
-      const product = line(item)
+    for (const item of cartItems) {
+      const product = item.product
       if (!product) continue
       if (Number(product.stock_quantity) < Number(item.quantity)) {
-        return NextResponse.json({ error: `${product.name} is out of stock` }, { status: 400 })
+        return NextResponse.json({ error: "Item is out of stock" }, { status: 400 })
       }
     }
 
-    // Total (GHS).
-    const total = carts.reduce((sum: number, item: any) => {
-      const product = line(item)
-      return sum + Number(product.price) * Number(item.quantity)
+    // Total (USD).
+    const total = cartItems.reduce((sum: number, item: any) => {
+      if (!item.product) return sum
+      return sum + Number(item.product.base_price) * Number(item.quantity)
     }, 0)
 
     if (total <= 0) {
       return NextResponse.json({ error: "Order total must be greater than zero" }, { status: 400 })
     }
 
-    const reference = `GGW-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+    const reference = `GGW-${Date.now()}`
 
-    // Create the order (Pending until Paystack confirms).
-    const { data: order, error: orderError } = await admin
-      .from("orders")
-      .insert([{ user_id: userId, total, status: "Pending", payment_status: "Pending", paystack_reference: reference }])
-      .select()
-      .single()
+    // Create the order (Pending until Paystack confirms) together with its
+    // line items, payment record, and immutable shipping address snapshot.
+    // All in one transaction.
+    const order = await prisma.$transaction(async (tx: any) => {
+      const created = await tx.order.create({
+        data: {
+          customer_id: customer.id,
+          currency: "USD",
+          grand_total: total,
+          payment_status: "Pending",
+          fulfillment_status: "Pending",
+          // Keep this field for now for compat, but the snapshot is in
+          // OrderShippingAddress
+          shipping_address: shippingAddress as any,
+        },
+      })
 
-    if (orderError || !order) {
-      return NextResponse.json({ error: orderError?.message || "Could not create order" }, { status: 500 })
-    }
+      // Create immutable shipping address snapshot
+      await tx.orderShippingAddress.create({
+        data: {
+          order_id: created.id,
+          ...shippingAddress,
+        },
+      })
 
-    // Snapshot the ordered items.
-    const orderItems = carts.map((item: any) => {
-      const product = line(item)
-      return { order_id: order.id, product_id: product.id, quantity: item.quantity, price: product.price }
+      await tx.orderItem.createMany({
+        data: cartItems.map((item: any) => {
+          const unitPrice = Number(item.product.base_price)
+          const qty = Number(item.quantity)
+          return {
+            order_id: created.id,
+            product_id: item.product.id,
+            product_name: item.product.name,
+            product_sku: null,
+            variant_id: item.variant_id ?? null,
+            variant_name: null,
+            quantity: qty,
+            unit_price: unitPrice,
+            currency: item.product.currency || "USD",
+            discount_amount: 0,
+            tax_amount: 0,
+            total_price: unitPrice * qty,
+          }
+        }),
+      })
+
+      await tx.payment.create({
+        data: {
+          order_id: created.id,
+          provider: "paystack",
+          provider_tx_id: reference,
+          amount: total,
+          currency: "USD",
+          status: "Pending",
+        },
+      })
+
+      return created
     })
-    const { error: itemError } = await admin.from("order_items").insert(orderItems)
-    if (itemError) {
-      return NextResponse.json({ error: itemError.message }, { status: 500 })
-    }
+
+    // Clear the cart items now that the order snapshot exists.
+    await prisma.cartItem.deleteMany({
+      where: { cart_id: cart.id },
+    })
 
     // Start Paystack (hosted checkout: card + mobile money).
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin
     const { authorization_url } = await initializeTransaction({
       email,
-      amountGhs: total,
+      amountUsd: total,
       reference,
       callbackUrl: `${siteUrl}/checkout/callback`,
-      metadata: { order_id: order.id, user_id: userId },
+      metadata: { order_id: order.id, customer_id: customer.id },
     })
 
     return NextResponse.json({ success: true, orderId: order.id, reference, authorization_url })
   } catch (error: any) {
+    console.error("Checkout error:", error)
     return NextResponse.json({ error: error.message || "Checkout failed" }, { status: 500 })
   }
 }

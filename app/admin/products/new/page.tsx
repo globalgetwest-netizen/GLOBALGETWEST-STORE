@@ -1,7 +1,6 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
-import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 
 export default function NewProductPage() {
@@ -11,340 +10,170 @@ export default function NewProductPage() {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [price, setPrice] = useState("")
-  const [paymentLink, setPaymentLink] = useState("")
+  const [categoryId, setCategoryId] = useState("")
+  const [categories, setCategories] = useState<any[]>([] )
 
   const [imageFile, setImageFile] = useState<File | null>(null)
 
-  const [categoryId, setCategoryId] = useState("")
-  const [categories, setCategories] = useState<any[]>([])
-
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-
-
-  // Load Categories
+  // Load categories via the API (Prisma-backed)
   useEffect(() => {
-
-    async function loadCategories(){
-
-      const { data } = await supabase
-        .from("categories")
-        .select("*")
-        .order("created_at", { ascending:false })
-
-
-      setCategories(data || [])
-
-    }
-
-
-    loadCategories()
-
-
-  },[])
-
-
-
-
-  async function addProduct() {
-
-
-    if (!imageFile) {
-
-      alert("Please select product image")
-      return
-
-    }
-
-
-    if (!categoryId) {
-
-      alert("Please select product category")
-      return
-
-    }
-
-
-
-    setLoading(true)
-
-
-
-    // Upload Image
-
-    const fileName = `${Date.now()}-${imageFile.name}`
-
-
-
-    const { error: uploadError } =
-      await supabase.storage
-        .from("product-images")
-        .upload(fileName, imageFile)
-
-
-
-    if (uploadError) {
-
-      alert(uploadError.message)
-
-      setLoading(false)
-
-      return
-
-    }
-
-
-
-
-    // Get Image URL
-
-    const { data } =
-      supabase.storage
-      .from("product-images")
-      .getPublicUrl(fileName)
-
-
-
-    const imageUrl = data.publicUrl
-
-
-
-
-
-    // Save Product
-
-    const { error } =
-      await supabase
-      .from("products")
-      .insert([
-
-        {
-
-          name,
-
-          description,
-
-          price,
-
-          image:imageUrl,
-
-          payment_link:paymentLink,
-
-          category_id:categoryId
-
+    async function loadCategories() {
+      try {
+        const res = await fetch("/api/categories")
+        if (!res.ok) {
+          throw new Error("Failed to load categories")
         }
-
-      ])
-
-
-
-
-
-    if(error){
-
-      alert(error.message)
-
-
-    }else{
-
-
-      alert("Product Added Successfully")
-
-
-      setName("")
-      setDescription("")
-      setPrice("")
-      setPaymentLink("")
-      setImageFile(null)
-      setCategoryId("")
-
-
-      router.push("/admin/products")
-
-
+        const data = await res.json()
+        setCategories(data || [])
+      } catch (err) {
+        console.error("Failed to load categories:", err)
+      }
     }
+    loadCategories()
+  }, [])
 
-
-
-    setLoading(false)
-
-
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setImageFile(e.target.files[0])
+    } else {
+      setImageFile(null)
+    }
   }
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name || !description || !price || !categoryId || !imageFile) {
+      setError("Please fill in all fields and select an image")
+      return
+    }
 
+    setLoading(true)
+    setError(null)
 
+    try {
+      const formData = new FormData()
+      formData.append("name", name)
+      formData.append("description", description)
+      formData.append("price", price)
+      formData.append("categoryId", categoryId)
+      formData.append("file", imageFile)
 
+      const res = await fetch("/api/products", {
+        method: "POST",
+        body: formData,
+      })
 
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || "Failed to create product")
+      }
 
+      const product = await res.json()
+      router.push(`/admin/products/edit/${product.id}`)
+    } catch (err: any) {
+      setError(err.message || "An unknown error occurred")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-
     <div>
+      <h1 className="text-4xl font-bold text-blue-900 mb-8">New Product</h1>
 
+      <div className="bg-white rounded-2xl shadow p-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="border w-full p-3 rounded mb-4"
+              required
+            />
+          </div>
 
-      <h1 className="text-4xl font-bold text-blue-900 mb-8">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="border w-full p-3 rounded mb-4"
+              rows={4}
+              required
+            />
+          </div>
 
-        Add New Product
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Price ($)</label>
+            <input
+              type="number"
+              step="0.01"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="border w-full p-3 rounded mb-4"
+              required
+            />
+          </div>
 
-      </h1>
-
-
-
-
-      <div className="bg-white rounded-2xl shadow p-8 max-w-2xl">
-
-
-
-        <input
-
-          className="border w-full p-3 rounded mb-4"
-
-          placeholder="Product Name"
-
-          value={name}
-
-          onChange={(e)=>setName(e.target.value)}
-
-        />
-
-
-
-
-
-        <textarea
-
-          className="border w-full p-3 rounded mb-4"
-
-          placeholder="Product Description"
-
-          value={description}
-
-          onChange={(e)=>setDescription(e.target.value)}
-
-        />
-
-
-
-
-
-        <input
-
-          className="border w-full p-3 rounded mb-4"
-
-          placeholder="Price"
-
-          value={price}
-
-          onChange={(e)=>setPrice(e.target.value)}
-
-        />
-
-
-
-
-
-        <select
-
-          className="border w-full p-3 rounded mb-4"
-
-          value={categoryId}
-
-          onChange={(e)=>setCategoryId(e.target.value)}
-
-        >
-
-
-          <option value="">
-
-            Select Category
-
-          </option>
-
-
-
-          {categories.map((category)=>(
-
-
-            <option
-
-              key={category.id}
-
-              value={category.id}
-
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="border w-full p-3 rounded mb-4"
+              required
             >
+              <option value="">Select a category</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-              {category.name}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="border w-full p-3 rounded mb-4"
+              required
+            />
+            {imageFile && (
+              <p className="text-sm text-gray-500 mt-1">
+                Selected: {imageFile.name}
+              </p>
+            )}
+          </div>
 
-            </option>
+          {error && (
+            <p className="text-red-500 text-sm mt-2">
+              {error}
+            </p>
+          )}
 
-
-          ))}
-
-
-
-        </select>
-
-
-
-
-
-        <input
-
-          type="file"
-
-          accept="image/*"
-
-          className="border w-full p-3 rounded mb-4"
-
-          onChange={(e)=>
-
-            setImageFile(e.target.files?.[0] || null)
-
-          }
-
-        />
-
-
-
-
-
-        <input
-
-          className="border w-full p-3 rounded mb-4"
-
-          placeholder="Payment Link"
-
-          value={paymentLink}
-
-          onChange={(e)=>setPaymentLink(e.target.value)}
-
-        />
-
-
-
-
-
-        <button
-
-          onClick={addProduct}
-
-          disabled={loading}
-
-          className="w-full bg-blue-900 text-white py-3 rounded-xl font-bold"
-
-        >
-
-          {loading ? "Uploading..." : "Add Product"}
-
-        </button>
-
-
-
+          <button
+            type="submit"
+            disabled={loading}
+            className={`
+              bg-blue-900 text-white px-6 py-3 rounded-xl
+              ${loading ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-800"}
+              w-full
+            `}
+          >
+            {loading ? "Creating..." : "Create Product"}
+          </button>
+        </form>
       </div>
-
-
     </div>
-
   )
-
 }
+
+
