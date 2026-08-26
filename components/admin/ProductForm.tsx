@@ -63,6 +63,20 @@ export function ProductForm({
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  function slugify(text: string): string {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+  }
+
+  // Auto-fill slug from name (matching the existing category-form pattern),
+  // but only while the user hasn't manually touched the slug field —
+  // editing an existing product's slug directly still works normally.
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(isEdit);
+
   function updateVariant(index: number, patch: Partial<VariantDraft>) {
     setForm((f) => ({
       ...f,
@@ -137,8 +151,19 @@ export function ProductForm({
       <section className="space-y-4">
         <h2 className="font-display text-lg">Basics</h2>
         <div className="grid sm:grid-cols-2 gap-4">
-          <TextField label="Name" value={form.name} onChange={(v) => updateField('name', v)} />
-          <TextField label="Slug (URL)" value={form.slug} onChange={(v) => updateField('slug', v)} />
+          <TextField
+            label="Name"
+            value={form.name}
+            onChange={(v) => {
+              updateField('name', v);
+              if (!slugManuallyEdited) updateField('slug', slugify(v));
+            }}
+          />
+          <TextField
+            label="Slug (URL)"
+            value={form.slug}
+            onChange={(v) => { setSlugManuallyEdited(true); updateField('slug', slugify(v)); }}
+          />
           <div>
             <label className="block text-sm font-medium mb-1.5">Category</label>
             <select

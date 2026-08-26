@@ -86,7 +86,14 @@ export async function getProductBySlug(slug: string) {
     .eq('is_active', true)
     .single();
 
-  if (error || !data) return null;
+  if (error || !data) {
+    // Don't swallow this silently — a masked error here is exactly what
+    // made this bug hard to diagnose. Check Vercel's Logs tab for this
+    // message (with the real Postgrest error code/detail) whenever a
+    // product 404s unexpectedly.
+    console.error(`getProductBySlug("${slug}") failed:`, error);
+    return null;
+  }
   return data;
 }
 
