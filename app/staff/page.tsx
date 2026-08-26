@@ -1,29 +1,49 @@
 // app/staff/page.tsx
 import Link from 'next/link';
 import { requireStaff } from '@/lib/staff/guard';
-import { formatUsd } from '@/lib/catalog';
+import { formatUsd } from '@/lib/format';
 
 export default async function StaffQueuePage() {
-  const { supabase, user } = await requireStaff();
+  const { supabase, user, profile } = await requireStaff();
 
-  const { data: myOrders } = await supabase
+  // A staff member with a country assigned only sees that country's orders
+  // in their queue; null country_code means unscoped (sees everything) —
+  // used for admin/ceo browsing this portal, or a staff member who
+  // genuinely covers multiple countries.
+  const countryFilter = profile.country_code;
+
+  let myOrdersQuery = supabase
     .from('orders')
-    .select('id, order_number, status, total_usd_cents, created_at')
+    .select('id, order_number, status, total_usd_cents, shipping_country_code, created_at')
     .eq('assigned_staff_id', user.id)
     .in('status', ['paid', 'processing'])
     .order('created_at', { ascending: true });
+  if (countryFilter) myOrdersQuery = myOrdersQuery.eq('shipping_country_code', countryFilter);
+  const { data: myOrders } = await myOrdersQuery;
 
-  const { data: unassigned } = await supabase
+  let unassignedQuery = supabase
     .from('orders')
-    .select('id, order_number, status, total_usd_cents, created_at')
+    .select('id, order_number, status, total_usd_cents, shipping_country_code, created_at')
     .is('assigned_staff_id', null)
     .in('status', ['paid', 'processing'])
     .order('created_at', { ascending: true })
     .limit(20);
+  if (countryFilter) unassignedQuery = unassignedQuery.eq('shipping_country_code', countryFilter);
+  const { data: unassigned } = await unassignedQuery;
 
   return (
     <div>
-      <h1 className="font-display text-3xl mb-8">My Queue</h1>
+      <h1 className="font-display text-3xl mb-1">My Queue</h1>
+      {countryFilter && (
+        <p className="text-[var(--color-ink-soft)] text-sm mb-7">
+          Showing orders shipping to <strong>{countryFilter}</strong> only, based on your assigned country.
+        </p>
+      )}
+      {!countryFilter && (
+        <p className="text-[var(--color-ink-soft)] text-sm mb-7">
+          No country restriction on your account — showing orders from all countries.
+        </p>
+      )}
 
       <section className="mb-10">
         <h2 className="font-display text-lg mb-3">Assigned to me ({myOrders?.length ?? 0})</h2>

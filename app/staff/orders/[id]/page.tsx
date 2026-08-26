@@ -33,6 +33,14 @@ export default async function StaffOrderDetailPage({
   // (is_staff_or_admin() covers payments read), but this view stays scoped
   // to what fulfilment actually needs.
 
+  // Supabase types a nested foreign-table select as an array by default
+  // (one-to-many shape) even though shipping_address_id is a one-to-one FK,
+  // because we're not using generated Database types. Normalize here rather
+  // than assume the shape at every usage site below.
+  const shippingAddress = Array.isArray(order.shipping_address)
+    ? order.shipping_address[0]
+    : order.shipping_address;
+
   return (
     <div>
       <h1 className="font-display text-3xl mb-1">{order.order_number}</h1>
@@ -61,13 +69,13 @@ export default async function StaffOrderDetailPage({
 
           <section className="border border-[var(--color-border)] rounded-lg p-5 bg-white/60">
             <h2 className="font-display text-lg mb-3">Ship To</h2>
-            {order.shipping_address ? (
+            {shippingAddress ? (
               <p className="text-sm leading-relaxed">
-                <strong>{order.shipping_address.full_name}</strong><br />
-                {order.shipping_address.phone}<br />
-                {order.shipping_address.line1}{order.shipping_address.line2 && <>, {order.shipping_address.line2}</>}<br />
-                {order.shipping_address.city}{order.shipping_address.region && `, ${order.shipping_address.region}`} {order.shipping_address.postal_code}<br />
-                {order.shipping_address.country_code}
+                <strong>{shippingAddress.full_name}</strong><br />
+                {shippingAddress.phone}<br />
+                {shippingAddress.line1}{shippingAddress.line2 && <>, {shippingAddress.line2}</>}<br />
+                {shippingAddress.city}{shippingAddress.region && `, ${shippingAddress.region}`} {shippingAddress.postal_code}<br />
+                {shippingAddress.country_code}
               </p>
             ) : <p className="text-sm text-[var(--color-ink-soft)]">No address on file.</p>}
             <p className="text-sm mt-3 pt-3 border-t border-[var(--color-border)]">

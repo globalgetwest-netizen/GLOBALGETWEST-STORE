@@ -1,240 +1,69 @@
-import { supabase } from "@/lib/supabase"
+// app/page.tsx
+import Link from 'next/link';
+import { getFeaturedProducts } from '@/lib/catalog';
+import { ProductCard } from '@/components/ProductCard';
 
-export default async function Home() {
-  const { data: products } = await supabase
-    .from("products")
-    .select(`
-      *,
-      categories(
-        name
-      )
-    `)
-    .order("created_at", { ascending: false })
-
-  const { data: categories } = await supabase
-    .from("categories")
-    .select("*")
-    .order("created_at", { ascending: false })
+export default async function HomePage() {
+  const featured = await getFeaturedProducts(8);
 
   return (
-    <main className="min-h-screen bg-white">
-
-      {/* Navigation */}
-      <nav className="flex items-center justify-between px-8 py-5 border-b">
-
-        <h1 className="text-3xl font-bold text-blue-900">
-          GLOBALGETWEST
-        </h1>
-
-        <div className="hidden md:flex gap-6 text-gray-700">
-          <span>Home</span>
-          <span>Products</span>
-          <span>Categories</span>
-          <span>Contact</span>
-        </div>
-
-        <a
-          href="/cart"
-          className="bg-blue-900 text-white px-5 py-2 rounded-lg"
-        >
-          Cart
-        </a>
-
-      </nav>
-
+    <div>
       {/* Hero */}
+      <section className="bg-[var(--color-forest)] text-[var(--color-parchment)]">
+        <div className="mx-auto max-w-7xl px-4 py-16 grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <p className="uppercase tracking-[0.2em] text-[var(--color-ochre-light)] text-xs font-medium mb-4">
+              Rooted in Tradition, Delivered Worldwide
+            </p>
+            <h1 className="font-display text-4xl md:text-5xl leading-[1.1] mb-5">
+              Natural remedies, sourced with proof of origin.
+            </h1>
+            <p className="text-[var(--color-parchment)]/80 text-base mb-8 max-w-md">
+              Every product on GLOBALGETWEST carries its ingredient sourcing,
+              origin country, and preparation method — so you know exactly
+              what you're taking, and where it came from.
+            </p>
+            <Link
+              href="/products"
+              className="focus-ring inline-block bg-[var(--color-ochre)] text-[var(--color-forest-dark)] font-semibold px-6 py-3 rounded-md hover:bg-[var(--color-ochre-light)] transition-colors"
+            >
+              Shop All Products
+            </Link>
+          </div>
+          <div className="hidden md:block aspect-[4/3] rounded-lg bg-[var(--color-forest-dark)] border border-white/10" />
+        </div>
+      </section>
 
-      <section className="bg-gradient-to-r from-blue-950 via-blue-800 to-blue-600 text-white px-10 py-24">
+      {/* Trust strip */}
+      <section className="border-b border-[var(--color-border)] bg-[var(--color-parchment-warm)]">
+        <div className="mx-auto max-w-7xl px-4 py-4 flex flex-wrap gap-x-10 gap-y-2 text-sm text-[var(--color-ink-soft)] justify-center">
+          <span>🌍 Ships worldwide</span>
+          <span>🔒 Secure checkout — cards, mobile money &amp; more</span>
+          <span>🌿 Ingredient &amp; origin disclosure on every product</span>
+        </div>
+      </section>
 
-        <div className="max-w-6xl mx-auto text-center">
+      {/* Featured products */}
+      <section className="mx-auto max-w-7xl px-4 py-12">
+        <div className="flex items-baseline justify-between mb-6">
+          <h2 className="font-display text-2xl">Featured Products</h2>
+          <Link href="/products" className="focus-ring text-sm text-[var(--color-forest)] font-medium hover:underline">
+            View all →
+          </Link>
+        </div>
 
-          <h2 className="text-5xl md:text-6xl font-bold leading-tight">
-            Your Global Marketplace
-            <br />
-            For Premium Natural Products
-          </h2>
-
-          <p className="mt-6 text-lg max-w-3xl mx-auto text-blue-100">
-            Discover trusted wellness products from GLOBALGETWEST.
-            Simple shopping, secure payment and worldwide access.
+        {featured.length === 0 ? (
+          <p className="text-[var(--color-ink-soft)] text-sm">
+            No featured products yet — add some in the admin portal.
           </p>
-
-          <div className="mt-10 flex justify-center gap-5">
-
-            <button className="bg-yellow-400 text-black px-10 py-4 rounded-full font-bold">
-              Shop Now
-            </button>
-
-            <button className="border border-white px-10 py-4 rounded-full">
-              Explore Categories
-            </button>
-
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {featured.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
           </div>
-
-          {/* Search */}
-
-          <form
-            action="/search"
-            className="mt-14 bg-white rounded-2xl p-3 flex max-w-4xl mx-auto"
-          >
-
-            <input
-              type="text"
-              name="q"
-              className="flex-1 px-6 py-4 text-black outline-none"
-              placeholder="Search products, categories and collections..."
-            />
-
-            <button
-              type="submit"
-              className="bg-blue-900 text-white px-10 rounded-xl"
-            >
-              Search
-            </button>
-
-          </form>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-14 text-sm">
-
-            <div>✓ Verified Products</div>
-            <div>✓ Secure Payments</div>
-            <div>✓ Worldwide Delivery</div>
-            <div>✓ Customer Support</div>
-
-          </div>
-
-        </div>
-
+        )}
       </section>
-
-      {/* Categories */}
-
-      <section className="px-10 py-12">
-
-        <h2 className="text-3xl font-bold text-blue-900 mb-8">
-          Explore Categories
-        </h2>
-
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-
-          {categories?.map((category) => (
-
-            <div
-              key={category.id}
-              className="border rounded-2xl overflow-hidden shadow hover:shadow-xl transition"
-            >
-
-              <img
-                src={category.image || "/placeholder.png"}
-                alt={category.name}
-                className="w-full h-32 object-cover"
-              />
-
-              <div className="p-5 text-center">
-
-                <h3 className="font-bold text-blue-900">
-                  {category.name}
-                </h3>
-
-              </div>
-
-            </div>
-
-          ))}
-
-        </div>
-
-      </section>
-
-      {/* Products */}
-
-      <section className="px-10 py-12 bg-gray-50">
-
-        <h2 className="text-3xl font-bold text-blue-900 mb-8">
-          Featured Products
-        </h2>
-
-        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6">
-
-          {products?.map((product) => (
-
-            <a
-              href={`/product/${product.id}`}
-              key={product.id}
-              className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition overflow-hidden block"
-            >
-
-              <div className="relative">
-
-                <img
-                  src={product.image || "/placeholder.png"}
-                  alt={product.name}
-                  className="w-full h-52 object-cover"
-                />
-
-                <span className="absolute top-3 left-3 bg-yellow-400 text-black px-4 py-2 rounded-full text-xs font-bold">
-                  ⭐ Featured
-                </span>
-
-              </div>
-
-              <div className="p-5">
-
-                <h3 className="text-xl font-bold text-blue-900">
-                  {product.name}
-                </h3>
-
-                <p className="text-blue-700 text-sm mt-2">
-                  Category: {product.categories?.name || "General"}
-                </p>
-
-                <p className="text-gray-600 mt-2 text-sm">
-                  {product.description}
-                </p>
-
-                <div className="text-yellow-500 mt-3">
-                  ★★★★★
-                </div>
-
-                <p className="text-blue-900 font-bold text-2xl mt-3">
-                  ${product.price}
-                </p>
-
-                <p className="text-green-600 text-sm mt-2">
-                  ✓ Available | Worldwide Delivery
-                </p>
-
-                <div className="mt-5 bg-yellow-400 text-center py-3 rounded-lg font-semibold">
-                  View Product
-                </div>
-
-              </div>
-
-            </a>
-
-          ))}
-
-        </div>
-
-      </section>
-
-      {/* Trust */}
-
-      <section className="px-10 py-12 grid md:grid-cols-4 gap-5 text-center">
-
-        <div>✓ Secure Payments</div>
-        <div>✓ Verified Products</div>
-        <div>✓ Worldwide Delivery</div>
-        <div>✓ Customer Support</div>
-
-      </section>
-
-      {/* Footer */}
-
-      <footer className="bg-blue-900 text-white text-center py-8">
-        © 2026 GLOBALGETWEST. All rights reserved.
-      </footer>
-
-    </main>
-  )
+    </div>
+  );
 }

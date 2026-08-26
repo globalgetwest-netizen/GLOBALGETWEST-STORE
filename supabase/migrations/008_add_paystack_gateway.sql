@@ -1,0 +1,12 @@
+-- Adds Paystack as a fourth payment gateway option. Same two-step rule as
+-- migration 006 applies here: ALTER TYPE ... ADD VALUE cannot be used in
+-- the same transaction as anything that references the new value.
+--
+-- Run ONLY this line first, on its own, in Supabase's SQL Editor:
+--
+--   alter type payment_gateway add value if not exists 'paystack';
+--
+-- Confirm it succeeds, THEN there is nothing else to run for this
+-- migration — unlike 006, nothing else in the schema needs updating,
+-- since payments.gateway is the only column using this enum and no
+-- RLS policy branches on its value.

@@ -10,7 +10,7 @@ export async function requireStaff() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, is_active, full_name, department')
+    .select('role, is_active, full_name, department, country_code')
     .eq('id', user.id)
     .single();
 

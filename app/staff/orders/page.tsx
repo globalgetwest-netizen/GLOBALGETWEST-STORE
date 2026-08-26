@@ -1,7 +1,7 @@
 // app/staff/orders/page.tsx
 import Link from 'next/link';
 import { requireStaff } from '@/lib/staff/guard';
-import { formatUsd } from '@/lib/catalog';
+import { formatUsd } from '@/lib/format';
 
 export default async function StaffOrdersPage({
   searchParams,
@@ -9,22 +9,31 @@ export default async function StaffOrdersPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const { status } = await searchParams;
-  const { supabase } = await requireStaff();
+  const { supabase, profile } = await requireStaff();
 
   let query = supabase
     .from('orders')
-    .select('id, order_number, status, total_usd_cents, created_at')
+    .select('id, order_number, status, total_usd_cents, shipping_country_code, created_at')
     .order('created_at', { ascending: false })
     .limit(100);
 
   if (status) query = query.eq('status', status);
+  if (profile.country_code) query = query.eq('shipping_country_code', profile.country_code);
 
   const { data: orders } = await query;
   const statuses = ['paid', 'processing', 'fulfilled', 'shipped', 'delivered', 'cancelled'];
 
   return (
     <div>
-      <h1 className="font-display text-3xl mb-6">All Orders</h1>
+      <h1 className="font-display text-3xl mb-1">All Orders</h1>
+      {profile.country_code && (
+        <p className="text-[var(--color-ink-soft)] text-sm mb-6">
+          Filtered to <strong>{profile.country_code}</strong>, your assigned country.
+        </p>
+      )}
+      {!profile.country_code && (
+        <p className="text-[var(--color-ink-soft)] text-sm mb-6">No country restriction — showing all countries.</p>
+      )}
 
       <div className="flex gap-2 mb-6 text-sm flex-wrap">
         <Link href="/staff/orders" className={`focus-ring px-3 py-1 rounded-full ${!status ? 'bg-[var(--color-forest)] text-[var(--color-parchment)]' : 'bg-white border border-[var(--color-border)]'}`}>

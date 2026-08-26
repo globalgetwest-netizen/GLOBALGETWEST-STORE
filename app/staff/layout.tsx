@@ -1,5 +1,6 @@
 // app/staff/layout.tsx
 import Link from 'next/link';
+import Image from 'next/image';
 import { requireStaff } from '@/lib/staff/guard';
 
 export default async function StaffLayout({ children }: { children: React.ReactNode }) {
@@ -8,10 +9,13 @@ export default async function StaffLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen flex" style={{ background: 'var(--color-parchment)' }}>
       <aside className="w-56 shrink-0 bg-[var(--color-forest)] text-[var(--color-parchment)] p-5 flex flex-col">
-        <Link href="/staff" className="font-display text-lg mb-8 block">
-          GLOBALGETWEST
-          <span className="block text-xs font-sans text-[var(--color-ochre-light)] tracking-wide mt-0.5">
-            STAFF
+        <Link href="/staff" className="focus-ring flex items-center gap-2.5 mb-8">
+          <Image src="/logo.png" alt="GLOBALGETWEST" width={32} height={32} className="rounded-full shrink-0" priority />
+          <span className="font-display text-lg leading-tight">
+            GLOBALGETWEST
+            <span className="block text-xs font-sans text-[var(--color-ochre-light)] tracking-wide mt-0.5">
+              STAFF
+            </span>
           </span>
         </Link>
 
