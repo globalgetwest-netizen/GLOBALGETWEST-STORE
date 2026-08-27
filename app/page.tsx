@@ -30,16 +30,47 @@ export default async function HomePage() {
               Shop All Products
             </Link>
           </div>
-          <div className="hidden md:block aspect-[4/3] rounded-lg bg-[var(--color-forest-dark)] border border-white/10" />
+          <div className="hidden md:flex relative aspect-[4/3] rounded-lg bg-[var(--color-forest-dark)] border border-white/10 items-center justify-center overflow-hidden">
+            {/* Subtle radial glow behind the emblem */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: 'radial-gradient(circle at center, rgba(184,134,59,0.18) 0%, transparent 65%)',
+              }}
+            />
+            {/* Faint decorative line-grid, evokes the globe/compass motif in the logo without competing with it */}
+            <svg className="absolute inset-0 w-full h-full opacity-[0.07]" viewBox="0 0 400 300" fill="none">
+              <circle cx="200" cy="150" r="120" stroke="var(--color-parchment)" strokeWidth="1" />
+              <circle cx="200" cy="150" r="90" stroke="var(--color-parchment)" strokeWidth="1" />
+              <line x1="80" y1="150" x2="320" y2="150" stroke="var(--color-parchment)" strokeWidth="1" />
+              <line x1="200" y1="30" x2="200" y2="270" stroke="var(--color-parchment)" strokeWidth="1" />
+              <ellipse cx="200" cy="150" rx="120" ry="45" stroke="var(--color-parchment)" strokeWidth="1" />
+              <ellipse cx="200" cy="150" rx="120" ry="85" stroke="var(--color-parchment)" strokeWidth="1" />
+            </svg>
+            <img
+              src="/logo.png"
+              alt=""
+              className="relative w-2/3 h-2/3 object-contain drop-shadow-2xl"
+            />
+          </div>
         </div>
       </section>
 
       {/* Trust strip */}
       <section className="border-b border-[var(--color-border)] bg-[var(--color-parchment-warm)]">
-        <div className="mx-auto max-w-7xl px-4 py-4 flex flex-wrap gap-x-10 gap-y-2 text-sm text-[var(--color-ink-soft)] justify-center">
-          <span>🌍 Ships worldwide</span>
-          <span>🔒 Secure checkout — cards, mobile money &amp; more</span>
-          <span>🌿 Ingredient &amp; origin disclosure on every product</span>
+        <div className="mx-auto max-w-7xl px-4 py-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-[var(--color-ink-soft)]">
+          <TrustItem
+            icon={<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 0c2.5 2.5 4 5.7 4 10s-1.5 7.5-4 10M12 2C9.5 4.5 8 7.7 8 12s1.5 7.5 4 10M2 12h20" />}
+            label="Ships worldwide"
+          />
+          <TrustItem
+            icon={<><rect x="5" y="11" width="14" height="9" rx="1.5" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></>}
+            label="Secure checkout — cards, mobile money & more"
+          />
+          <TrustItem
+            icon={<path d="M12 2C8 6 6 9 6 13a6 6 0 0 0 12 0c0-4-2-7-6-11Zm0 8v10" />}
+            label="Ingredient & origin disclosure on every product"
+          />
         </div>
       </section>
 
@@ -64,6 +95,21 @@ export default async function HomePage() {
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+function TrustItem({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <svg
+        viewBox="0 0 24 24" width="18" height="18" fill="none"
+        stroke="var(--color-forest)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
+        className="shrink-0"
+      >
+        {icon}
+      </svg>
+      <span>{label}</span>
     </div>
   );
 }
