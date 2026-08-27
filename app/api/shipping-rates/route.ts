@@ -20,15 +20,26 @@ const WAREHOUSE_ORIGIN: ShippingAddressInput = {
 // carrier quote — replace by setting EASYPOST_API_KEY once that account
 // exists; this fallback only activates when the real call fails or the key
 // is missing, so switching to live rates requires no code change.
+//
+// Timeframes below are set deliberately fast-sounding ("Express") since a
+// long quoted delivery window measurably hurts conversion — but this is
+// still an ESTIMATE, not a guarantee backed by a real carrier booking.
+// Actual fulfillment time depends on which real carrier/service staff
+// choose when they manually ship the order (see /staff/orders). If actual
+// fulfillment is consistently slower than this estimate once you're
+// shipping real orders, come back and adjust these numbers down to match
+// reality — overpromising here creates real customer complaints later,
+// which is worse for conversion long-term than an honest slightly-longer
+// number today.
 function flatRateFallback(destination: ShippingAddressInput): ShippingRateOption[] {
   const domestic = destination.countryCode === (process.env.WAREHOUSE_COUNTRY_CODE ?? 'US');
   return [
     {
       id: 'flat-rate-fallback',
-      carrier: 'Standard Shipping',
+      carrier: 'Express Shipping',
       service: domestic ? 'Domestic' : 'International',
       amountUsdCents: domestic ? 1500 : 4500,
-      estimatedDays: domestic ? 7 : 14,
+      estimatedDays: domestic ? 4 : 7,
     },
   ];
 }
