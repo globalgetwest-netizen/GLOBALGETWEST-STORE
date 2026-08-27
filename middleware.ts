@@ -34,16 +34,29 @@ export async function middleware(request: NextRequest) {
 
   // Touching getUser() is what actually triggers the refresh-if-needed
   // logic inside the Supabase client — this call matters, not just the
-  // client construction above.
-  await supabase.auth.getUser();
+  // client construction above. Wrapped so a slow/failed auth check (network
+  // hiccup, brief Supabase latency) degrades to "treat as signed out for
+  // this one request" rather than timing out the entire page — the page's
+  // own supabaseServerClient() call still gets a real chance to succeed.
+  try {
+    await supabase.auth.getUser();
+  } catch (err) {
+    console.error('Middleware session refresh failed, continuing without it:', err);
+  }
 
   return response;
 }
 
 export const config = {
   matcher: [
-    // Run on every route except static assets and image optimization files,
-    // where there's no session to refresh and no benefit to the overhead.
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Run on pages (Server Components), which genuinely need this — they
+    // can't write cookies themselves, so this middleware is what refreshes
+    // their session. Excludes static assets, AND excludes /api/* — Route
+    // Handlers can write cookies directly and already refresh their own
+    // session via supabaseServerClient(), so running this here too was
+    // pure redundant overhead: an extra Supabase Auth round-trip on every
+    // API call for no benefit, including on the checkout path where a slow
+    // network moment turned into a full request timeout.
+    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
