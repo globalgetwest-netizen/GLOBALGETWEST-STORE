@@ -11,13 +11,11 @@ interface CartSummary {
 }
 
 const GATEWAYS_BY_CURRENCY: Record<string, { id: 'stripe' | 'flutterwave' | 'grey' | 'paystack'; label: string }[]> = {
-  // USD intentionally does NOT list Paystack right now: Paystack's Ghana
-  // account defaults to GHS, meaning USD settlement isn't confirmed
-  // enabled — showing it as an option risked an international customer
-  // silently being charged in GHS on Paystack's hosted page. Grey (USDC)
-  // is the only currently-confirmed non-GHS option for USD customers.
-  // Add Paystack back here once USD is confirmed active with their support.
-  USD: [{ id: 'grey', label: 'USDC (Grey)' }],
+  // Grey powers this option on the backend, but the customer never needs
+  // to see that name — only the payment method itself (USDC/crypto)
+  // matters to them. Once a card gateway is approved for USD, add it
+  // alongside this, not instead of it.
+  USD: [{ id: 'grey', label: 'Pay with USDC (Crypto)' }],
   GHS: [{ id: 'paystack', label: 'Card / Mobile Money (Paystack)' }],
   NGN: [{ id: 'flutterwave', label: 'Card / Mobile Money (Flutterwave)' }],
 };
@@ -202,26 +200,39 @@ export function CheckoutFlow({ cart }: { cart: CartSummary }) {
         {step === 'payment' && (
           <section className="border border-[var(--color-border)] rounded-lg p-5 bg-white/60">
             <h2 className="font-display text-lg mb-4">3. Payment</h2>
-            <div className="space-y-2">
-              {availableGateways.map((g) => (
-                <label
-                  key={g.id}
-                  className={`flex items-center gap-3 border rounded-md px-4 py-3 cursor-pointer text-sm ${
-                    gateway === g.id ? 'border-[var(--color-forest)] bg-[var(--color-parchment-warm)]' : 'border-[var(--color-border)]'
-                  }`}
+            {availableGateways.length === 0 ? (
+              <div className="rounded-md border border-[var(--color-ochre)]/40 bg-[var(--color-ochre)]/10 px-4 py-3 text-sm">
+                <p className="font-medium mb-1">Online payment isn't available for your region yet.</p>
+                <p className="text-[var(--color-ink-soft)]">
+                  We're setting up card payments for international orders. Please contact us at{' '}
+                  <a href="mailto:orders@globalgetwest.com" className="underline">orders@globalgetwest.com</a>{' '}
+                  to arrange payment for this order — your cart details are saved.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  {availableGateways.map((g) => (
+                    <label
+                      key={g.id}
+                      className={`flex items-center gap-3 border rounded-md px-4 py-3 cursor-pointer text-sm ${
+                        gateway === g.id ? 'border-[var(--color-forest)] bg-[var(--color-parchment-warm)]' : 'border-[var(--color-border)]'
+                      }`}
+                    >
+                      <input type="radio" name="gateway" checked={gateway === g.id} onChange={() => setGateway(g.id)} />
+                      {g.label}
+                    </label>
+                  ))}
+                </div>
+                <button
+                  onClick={submitOrder}
+                  disabled={loading}
+                  className="focus-ring mt-4 w-full bg-[var(--color-ochre)] text-[var(--color-forest-dark)] font-semibold px-5 py-3 rounded-md hover:bg-[var(--color-ochre-light)] disabled:opacity-50"
                 >
-                  <input type="radio" name="gateway" checked={gateway === g.id} onChange={() => setGateway(g.id)} />
-                  {g.label}
-                </label>
-              ))}
-            </div>
-            <button
-              onClick={submitOrder}
-              disabled={loading}
-              className="focus-ring mt-4 w-full bg-[var(--color-ochre)] text-[var(--color-forest-dark)] font-semibold px-5 py-3 rounded-md hover:bg-[var(--color-ochre-light)] disabled:opacity-50"
-            >
-              {loading ? 'Redirecting to payment…' : `Pay ${formatUsd(total)}`}
-            </button>
+                  {loading ? 'Redirecting to payment…' : `Pay ${formatUsd(total)}`}
+                </button>
+              </>
+            )}
           </section>
         )}
 
