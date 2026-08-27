@@ -35,7 +35,7 @@ export default async function HomePage() {
             <div
               className="absolute inset-0"
               style={{
-                background: 'radial-gradient(circle at center, rgba(184,134,59,0.18) 0%, transparent 65%)',
+                background: 'radial-gradient(circle at center, rgba(192,138,52,0.20) 0%, transparent 65%)',
               }}
             />
             {/* Faint decorative line-grid, evokes the globe/compass motif in the logo without competing with it */}

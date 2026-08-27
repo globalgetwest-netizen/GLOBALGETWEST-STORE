@@ -1,20 +1,19 @@
 // app/layout.tsx
 import type { Metadata } from 'next';
-import { Fraunces, Inter } from 'next/font/google';
+import { Playfair_Display, Inter } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 
-// The actual brand typography — this was previously only referenced in CSS
-// (var(--font-display)/var(--font-body)) but never loaded, so every browser
-// was silently rendering generic system fonts (Georgia/system-ui) instead
-// of the real design. next/font/google both loads them and generates the
-// matching CSS variables automatically.
-const fraunces = Fraunces({
+// Playfair Display — the classic serif of premium/luxury global brands,
+// paired with the navy+gold palette sampled from the real logo. Replaces
+// the earlier Fraunces choice, which was picked before the real logo
+// existed and reads more "artisanal boutique" than "global premium."
+const playfair = Playfair_Display({
   subsets: ['latin'],
   variable: '--font-display',
   display: 'swap',
-  weight: ['400', '500', '600'],
+  weight: ['500', '600', '700'],
 });
 
 const inter = Inter({
@@ -30,7 +29,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable}`}>
+    <html lang="en" className={`${playfair.variable} ${inter.variable}`}>
       <body className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1">{children}</main>
