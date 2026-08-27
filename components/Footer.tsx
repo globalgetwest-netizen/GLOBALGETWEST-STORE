@@ -16,7 +16,7 @@ export function Footer() {
           <h4 className="font-semibold text-[var(--color-ink)] mb-2">Customer Care</h4>
           <ul className="space-y-1">
             <li>Shipping &amp; delivery</li>
-            <li>Returns &amp; refunds</li>
+            <li>Order support</li>
             <li>Contact support</li>
           </ul>
         </div>
