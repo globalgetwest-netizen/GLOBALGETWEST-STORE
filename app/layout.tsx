@@ -23,7 +23,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'GLOBALGETWEST — Natural Herbal Products',
+  title: 'GLOBALGETWEST — Natural Extracts of Therapeutic Plant Compounds',
   description: 'Natural extracts of selected therapeutic plant compounds, shipped worldwide.',
 };
 

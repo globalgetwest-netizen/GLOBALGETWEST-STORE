@@ -35,7 +35,7 @@ export async function Header() {
               id="site-search"
               name="q"
               type="search"
-              placeholder="Search herbal products, ingredients, conditions..."
+              placeholder="Search natural extracts, ingredients, conditions..."
               className="focus-ring w-full rounded-md px-3.5 py-2 text-[var(--color-ink)] bg-[var(--color-parchment)] placeholder:text-[var(--color-ink-soft)] text-sm"
             />
           </form>

@@ -13,10 +13,10 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-4 py-16 grid md:grid-cols-2 gap-10 items-center">
           <div>
             <p className="uppercase tracking-[0.2em] text-[var(--color-ochre-light)] text-xs font-medium mb-4">
-              Rooted in Tradition, Delivered Worldwide
+              Sourced with Precision, Delivered Worldwide
             </p>
             <h1 className="font-display text-4xl md:text-5xl leading-[1.1] mb-5">
-              Natural remedies, sourced with proof of origin.
+              Natural extracts of selected therapeutic plant compounds.
             </h1>
             <p className="text-[var(--color-parchment)]/80 text-base mb-8 max-w-md">
               Every product on GLOBALGETWEST carries its ingredient sourcing,

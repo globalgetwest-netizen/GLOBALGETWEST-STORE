@@ -192,7 +192,7 @@ export function ProductForm({
       </section>
 
       <section className="space-y-4">
-        <h2 className="font-display text-lg">Herbal Disclosure</h2>
+        <h2 className="font-display text-lg">Ingredient Disclosure</h2>
         <TextArea label="Ingredients" value={form.ingredients} onChange={(v) => updateField('ingredients', v)} required={false} />
         <TextArea label="Usage instructions" value={form.usage_instructions} onChange={(v) => updateField('usage_instructions', v)} required={false} />
         <TextArea label="Warnings" value={form.warnings} onChange={(v) => updateField('warnings', v)} required={false} />
