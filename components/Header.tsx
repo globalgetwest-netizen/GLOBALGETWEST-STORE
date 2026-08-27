@@ -7,6 +7,19 @@ export async function Header() {
   const supabase = await supabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Nav categories now pulled live from the database — editing, renaming, or
+  // deactivating a category in /admin/categories updates this automatically.
+  // Previously these 4 links were hardcoded text, completely disconnected
+  // from the actual categories table, which is why admin changes never
+  // showed up here. Capped to a curated set (by sort_order) so the nav bar
+  // stays clean as the catalog grows, rather than dumping every category.
+  const { data: navCategories } = await supabase
+    .from('categories')
+    .select('name, slug')
+    .eq('is_active', true)
+    .order('sort_order')
+    .limit(6);
+
   return (
     <header className="sticky top-0 z-40 bg-[var(--color-forest)] text-[var(--color-parchment)]">
       <div className="mx-auto max-w-7xl px-4">
@@ -52,18 +65,15 @@ export async function Header() {
           <Link href="/products" className="focus-ring whitespace-nowrap hover:text-[var(--color-ochre-light)]">
             All Products
           </Link>
-          <Link href="/products?category=immune-support" className="focus-ring whitespace-nowrap hover:text-[var(--color-ochre-light)]">
-            Immune Support
-          </Link>
-          <Link href="/products?category=liver-detox" className="focus-ring whitespace-nowrap hover:text-[var(--color-ochre-light)]">
-            Liver &amp; Detox
-          </Link>
-          <Link href="/products?category=digestive-health" className="focus-ring whitespace-nowrap hover:text-[var(--color-ochre-light)]">
-            Digestive Health
-          </Link>
-          <Link href="/products?category=teas-tinctures" className="focus-ring whitespace-nowrap hover:text-[var(--color-ochre-light)]">
-            Teas &amp; Tinctures
-          </Link>
+          {(navCategories ?? []).map((c) => (
+            <Link
+              key={c.slug}
+              href={`/products?category=${c.slug}`}
+              className="focus-ring whitespace-nowrap hover:text-[var(--color-ochre-light)]"
+            >
+              {c.name}
+            </Link>
+          ))}
         </nav>
       </div>
     </header>

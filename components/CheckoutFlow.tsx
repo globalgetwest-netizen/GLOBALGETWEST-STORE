@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { COUNTRIES, currencyForCountry, localCurrencyForCountry } from '@/lib/countries';
 import { formatUsd } from '@/lib/format';
 import type { ShippingRateOption } from '@/lib/shipping/types';
+import { CONTACTS, contactForCountry } from '@/lib/contact';
+import { ContactAgentButton } from '@/components/ContactAgentButton';
 
 interface CartSummary {
   subtotalUsdCents: number;
@@ -233,6 +235,25 @@ export function CheckoutFlow({ cart }: { cart: CartSummary }) {
                 </button>
               </>
             )}
+
+            {/* Manual payment via WhatsApp — an ADDITION alongside the real
+                gateways above, not a replacement. Routes to the regional
+                contact based on the customer's country. The Asia/Africa
+                number is deliberately hidden until the customer clicks —
+                never in the page's initial HTML — since it reveals a Ghana
+                country code; the US/Europe number is fine to show directly. */}
+            <div className="mt-5 pt-5 border-t border-[var(--color-border)]">
+              <p className="text-sm text-[var(--color-ink-soft)] mb-2">
+                Prefer bank transfer or Western Union? Message us with your order details and we'll arrange it directly.
+              </p>
+              <ContactAgentButton
+                label={contactForCountry(address.countryCode).label}
+                phone={contactForCountry(address.countryCode).phone}
+                whatsappNumber={contactForCountry(address.countryCode).whatsapp}
+                message={`Hi, I'd like to arrange payment for an order.\n\nName: ${address.fullName}\nCountry: ${COUNTRIES.find((c) => c.code === address.countryCode)?.name ?? address.countryCode}\nOrder total: ${formatUsd(total)}\n\n(Please confirm the items with me.)`}
+                revealImmediately={contactForCountry(address.countryCode).label === CONTACTS.usEurope.label}
+              />
+            </div>
           </section>
         )}
 
