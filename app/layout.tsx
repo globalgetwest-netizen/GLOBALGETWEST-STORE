@@ -24,7 +24,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: 'GLOBALGETWEST — Natural Herbal Products',
-  description: 'Ethically sourced natural herbal products, shipped worldwide.',
+  description: 'Natural extracts of selected therapeutic plant compounds, shipped worldwide.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

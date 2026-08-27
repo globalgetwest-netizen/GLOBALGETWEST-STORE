@@ -13,7 +13,7 @@ export function Footer() {
             <Image src="/logo.png" alt="GLOBALGETWEST" width={28} height={28} className="rounded-full" />
             <h4 className="font-display text-[var(--color-ink)]">GLOBALGETWEST</h4>
           </div>
-          <p className="mb-3">Natural herbal products, shipped worldwide.</p>
+          <p className="mb-3">Natural extracts of selected therapeutic plant compounds, shipped worldwide.</p>
           <a
             href="https://www.tiktok.com/@globalgetwest"
             target="_blank" rel="noopener noreferrer"
