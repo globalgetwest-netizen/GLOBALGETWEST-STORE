@@ -1,7 +1,9 @@
 // app/products/[slug]/page.tsx
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getProductBySlug } from '@/lib/catalog';
 import { AddToCartForm } from '@/components/AddToCartForm';
+import { ProductGallery } from '@/components/ProductGallery';
 
 export default async function ProductDetailPage({
   params,
@@ -17,34 +19,31 @@ export default async function ProductDetailPage({
   const publishedReviews = (product.reviews ?? []).filter((r: any) => r.is_published);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 grid md:grid-cols-2 gap-10">
-      {/* Images */}
-      <div>
-        <div className="aspect-square rounded-lg bg-[var(--color-parchment-warm)] overflow-hidden border border-[var(--color-border)]">
-          {images[0] ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={images[0].url} alt={images[0].alt_text ?? product.name} className="h-full w-full object-cover" />
-          ) : (
-            <div className="h-full w-full flex items-center justify-center text-[var(--color-ink-soft)]">No image</div>
-          )}
-        </div>
-        {images.length > 1 && (
-          <div className="mt-3 grid grid-cols-5 gap-2">
-            {images.slice(1, 6).map((img: any) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={img.id}
-                src={img.url}
-                alt={img.alt_text ?? ''}
-                className="aspect-square object-cover rounded-md border border-[var(--color-border)]"
-              />
-            ))}
-          </div>
+    <div className="mx-auto max-w-7xl px-4 py-6">
+      {/* Breadcrumbs */}
+      <nav className="text-xs text-[var(--color-ink-soft)] mb-6 flex items-center gap-1.5">
+        <Link href="/" className="focus-ring hover:text-[var(--color-forest)] hover:underline">Home</Link>
+        <span>/</span>
+        <Link href="/products" className="focus-ring hover:text-[var(--color-forest)] hover:underline">Products</Link>
+        {product.categories?.name && (
+          <>
+            <span>/</span>
+            <Link
+              href={`/products?category=${product.categories.slug}`}
+              className="focus-ring hover:text-[var(--color-forest)] hover:underline"
+            >
+              {product.categories.name}
+            </Link>
+          </>
         )}
-      </div>
+        <span>/</span>
+        <span className="text-[var(--color-ink)]">{product.name}</span>
+      </nav>
 
-      {/* Details */}
-      <div>
+      <div className="grid md:grid-cols-2 gap-10">
+        <ProductGallery images={images} productName={product.name} />
+
+        <div>
         {product.categories?.name && (
           <p className="text-xs uppercase tracking-wide text-[var(--color-ochre)] font-medium mb-2">
             {product.categories.name}
@@ -112,6 +111,8 @@ export default async function ProductDetailPage({
             </div>
           </div>
         )}
+      </div>
+      </div>
       </div>
     </div>
   );

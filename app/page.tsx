@@ -74,6 +74,33 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Shop by category */}
+      <section className="mx-auto max-w-7xl px-4 py-12">
+        <h2 className="font-display text-2xl mb-6">Shop by Category</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <CategoryTile
+            href="/products?category=immune-support"
+            label="Immune Support"
+            icon={<path d="M12 2l7 4v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-4z" />}
+          />
+          <CategoryTile
+            href="/products?category=liver-detox"
+            label="Liver & Detox"
+            icon={<path d="M12 2C8 6 6 9 6 13a6 6 0 0 0 12 0c0-4-2-7-6-11Z" />}
+          />
+          <CategoryTile
+            href="/products?category=digestive-health"
+            label="Digestive Health"
+            icon={<><circle cx="12" cy="12" r="9" /><path d="M8 12h8M12 8v8" /></>}
+          />
+          <CategoryTile
+            href="/products?category=teas-tinctures"
+            label="Teas & Tinctures"
+            icon={<><path d="M4 8h13a3 3 0 0 1 0 6h-1" /><path d="M4 8v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V8" /><path d="M6 3v2M9 3v2M12 3v2" /></>}
+          />
+        </div>
+      </section>
+
       {/* Featured products */}
       <section className="mx-auto max-w-7xl px-4 py-12">
         <div className="flex items-baseline justify-between mb-6">
@@ -96,6 +123,22 @@ export default async function HomePage() {
         )}
       </section>
     </div>
+  );
+}
+
+function CategoryTile({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="focus-ring group flex flex-col items-center gap-3 rounded-lg border border-[var(--color-border)] bg-white p-6 text-center transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-[var(--color-ochre)]"
+    >
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-forest)]/8 text-[var(--color-forest)] transition-colors group-hover:bg-[var(--color-forest)] group-hover:text-[var(--color-parchment)]">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          {icon}
+        </svg>
+      </div>
+      <span className="font-medium text-sm text-[var(--color-ink)]">{label}</span>
+    </Link>
   );
 }
 

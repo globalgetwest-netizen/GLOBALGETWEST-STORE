@@ -2,11 +2,38 @@
 import Link from 'next/link';
 import { formatUsd, type ProductCardData } from '@/lib/catalog';
 
+function StarRating({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-0.5" aria-label={`${rating.toFixed(1)} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((i) => {
+        const filled = rating >= i;
+        const half = !filled && rating > i - 1;
+        return (
+          <svg key={i} viewBox="0 0 20 20" width="12" height="12" className="shrink-0">
+            <defs>
+              {half && (
+                <linearGradient id={`half-${i}`}>
+                  <stop offset="50%" stopColor="var(--color-ochre)" />
+                  <stop offset="50%" stopColor="var(--color-border)" />
+                </linearGradient>
+              )}
+            </defs>
+            <path
+              d="M10 1.5l2.6 5.3 5.9.8-4.3 4.1 1 5.8L10 14.7l-5.2 2.8 1-5.8L1.5 7.6l5.9-.8L10 1.5z"
+              fill={filled ? 'var(--color-ochre)' : half ? `url(#half-${i})` : 'var(--color-border)'}
+            />
+          </svg>
+        );
+      })}
+    </div>
+  );
+}
+
 export function ProductCard({ product }: { product: ProductCardData }) {
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="group focus-ring block rounded-lg border border-[var(--color-border)] bg-white/60 overflow-hidden transition-shadow hover:shadow-md"
+      className="group focus-ring block rounded-lg border border-[var(--color-border)] bg-white overflow-hidden transition-all hover:shadow-lg hover:-translate-y-0.5"
     >
       <div className="relative aspect-square bg-[var(--color-parchment-warm)] overflow-hidden">
         {product.image_url ? (
@@ -38,15 +65,17 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           </p>
         )}
 
-        <div className="mt-2 flex items-center justify-between">
-          <span className="font-semibold text-[var(--color-forest)]">
+        {product.review_count > 0 && (
+          <div className="mt-1.5 flex items-center gap-1.5">
+            <StarRating rating={product.avg_rating} />
+            <span className="text-[11px] text-[var(--color-ink-soft)]">({product.review_count})</span>
+          </div>
+        )}
+
+        <div className="mt-2">
+          <span className="font-semibold text-[17px] text-[var(--color-forest)]">
             from {formatUsd(product.price_from_usd_cents)}
           </span>
-          {product.review_count > 0 && (
-            <span className="text-[12px] text-[var(--color-ink-soft)]">
-              ★ {product.avg_rating.toFixed(1)} ({product.review_count})
-            </span>
-          )}
         </div>
       </div>
     </Link>
