@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { formatUsd } from '@/lib/catalog';
+import { formatUsd } from '@/lib/format';
 
 interface Product {
   id: string; name: string; is_active: boolean; is_featured: boolean;
