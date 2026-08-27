@@ -34,9 +34,14 @@ export const greyProvider: PaymentProvider = {
   gateway: 'grey',
 
   supportedCurrencies() {
-    // USDC is treated as a "currency" here for the checkout flow, priced
-    // 1:1 against USD at order time.
-    return ['USDC'];
+    // The checkout flow's currency field is always 'USD' (from
+    // currencyForCountry() in lib/countries.ts) — it never literally sends
+    // 'USDC'. USDC is the settlement asset Grey actually uses underneath,
+    // but at the app level this option represents "pay in USD via Grey's
+    // USDC rails," so this must list 'USD' to match what's actually sent,
+    // or the currency-safety check in the checkout route rejects every
+    // attempt to use this gateway.
+    return ['USD'];
   },
 
   async createCheckoutSession(order: OrderForCheckout): Promise<CheckoutSession> {
