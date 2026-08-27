@@ -1,7 +1,7 @@
 'use client';
 // components/CheckoutFlow.tsx
 import { useEffect, useState } from 'react';
-import { COUNTRIES, currencyForCountry } from '@/lib/countries';
+import { COUNTRIES, currencyForCountry, localCurrencyForCountry } from '@/lib/countries';
 import { formatUsd } from '@/lib/format';
 import type { ShippingRateOption } from '@/lib/shipping/types';
 
@@ -138,6 +138,14 @@ export function CheckoutFlow({ cart }: { cart: CartSummary }) {
               </select>
             </div>
           </div>
+
+          {address.countryCode && localCurrencyForCountry(address.countryCode) !== currency && (
+            <p className="mt-3 text-xs text-[var(--color-ink-soft)] bg-[var(--color-parchment-warm)] rounded-md px-3 py-2">
+              Your local currency is {localCurrencyForCountry(address.countryCode)}, but this order will be
+              charged in {currency} — that's the currency our payment processor for your region actually
+              supports right now. Your card issuer will convert the {currency} amount at checkout.
+            </p>
+          )}
 
           {step === 'address' && (
             <button
