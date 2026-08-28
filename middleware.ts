@@ -10,6 +10,22 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+// A try/catch alone doesn't protect against this: if Supabase's Auth
+// endpoint simply hangs rather than erroring, the request never rejects,
+// so the catch block never runs — Vercel's own platform-level execution
+// timeout kills the whole middleware first, which is what produced the
+// 504 MIDDLEWARE_INVOCATION_TIMEOUT on the sign-in page. This wraps fetch
+// with an explicit, short abort so we always give up well before Vercel's
+// own harder limit — a slow/hanging auth check degrades to "treat as
+// signed out for this one request" instead of timing out the entire page.
+function fetchWithTimeout(timeoutMs: number) {
+  return (url: RequestInfo | URL, init?: RequestInit) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
+  };
+}
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -17,6 +33,7 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: { fetch: fetchWithTimeout(4000) },
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -32,16 +49,10 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  // Touching getUser() is what actually triggers the refresh-if-needed
-  // logic inside the Supabase client — this call matters, not just the
-  // client construction above. Wrapped so a slow/failed auth check (network
-  // hiccup, brief Supabase latency) degrades to "treat as signed out for
-  // this one request" rather than timing out the entire page — the page's
-  // own supabaseServerClient() call still gets a real chance to succeed.
   try {
     await supabase.auth.getUser();
   } catch (err) {
-    console.error('Middleware session refresh failed, continuing without it:', err);
+    console.error('Middleware session refresh failed or timed out, continuing without it:', err);
   }
 
   return response;
@@ -54,9 +65,7 @@ export const config = {
     // their session. Excludes static assets, AND excludes /api/* — Route
     // Handlers can write cookies directly and already refresh their own
     // session via supabaseServerClient(), so running this here too was
-    // pure redundant overhead: an extra Supabase Auth round-trip on every
-    // API call for no benefit, including on the checkout path where a slow
-    // network moment turned into a full request timeout.
+    // pure redundant overhead.
     '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
