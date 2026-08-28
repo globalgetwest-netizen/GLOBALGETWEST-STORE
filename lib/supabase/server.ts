@@ -3,6 +3,22 @@ import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 
+// Every server-side Supabase call was previously unbounded — if Supabase's
+// connection had any slow moment, a page would hang until Vercel's own
+// hard function limit (25s) killed it outright, producing exactly the
+// 504 "did not return an initial response within 25s" errors seen across
+// /, /products, /admin, /account/sign-in, and more. Wrapping every client's
+// fetch with an explicit abort means a slow Supabase response fails fast
+// and visibly (a real error the page can catch) instead of hanging the
+// entire request to the platform's hard limit.
+function fetchWithTimeout(timeoutMs: number) {
+  return (url: RequestInfo | URL, init?: RequestInit) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
+  };
+}
+
 /**
  * Service-role client — bypasses RLS. Use ONLY in trusted server contexts:
  * webhook handlers, admin cron jobs. Never expose this client or key to
@@ -12,7 +28,7 @@ export function supabaseServiceRole() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } },
+    { auth: { persistSession: false }, global: { fetch: fetchWithTimeout(8000) } },
   );
 }
 
@@ -28,6 +44,7 @@ export async function supabaseServerClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: { fetch: fetchWithTimeout(8000) },
       cookies: {
         getAll() {
           return cookieStore.getAll();

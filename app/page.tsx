@@ -10,7 +10,7 @@ export default async function HomePage() {
     <div>
       {/* Hero */}
       <section className="bg-[var(--color-forest)] text-[var(--color-parchment)]">
-        <div className="mx-auto max-w-7xl px-4 py-16 grid md:grid-cols-2 gap-10 items-center">
+        <div className="mx-auto max-w-[1600px] px-4 py-16 grid md:grid-cols-2 gap-10 items-center">
           <div>
             <p className="uppercase tracking-[0.2em] text-[var(--color-ochre-light)] text-xs font-medium mb-4">
               Sourced with Precision, Delivered Worldwide
@@ -58,7 +58,7 @@ export default async function HomePage() {
 
       {/* Trust strip */}
       <section className="border-b border-[var(--color-border)] bg-[var(--color-parchment-warm)]">
-        <div className="mx-auto max-w-7xl px-4 py-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-[var(--color-ink-soft)]">
+        <div className="mx-auto max-w-[1600px] px-4 py-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-[var(--color-ink-soft)]">
           <TrustItem
             icon={<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 0c2.5 2.5 4 5.7 4 10s-1.5 7.5-4 10M12 2C9.5 4.5 8 7.7 8 12s1.5 7.5 4 10M2 12h20" />}
             label="Ships worldwide"
@@ -75,7 +75,7 @@ export default async function HomePage() {
       </section>
 
       {/* Shop by category */}
-      <section className="mx-auto max-w-7xl px-4 py-12">
+      <section className="mx-auto max-w-[1600px] px-4 py-12">
         <h2 className="font-display text-2xl mb-6">Shop by Category</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <CategoryTile
@@ -102,7 +102,7 @@ export default async function HomePage() {
       </section>
 
       {/* Featured products */}
-      <section className="mx-auto max-w-7xl px-4 py-12">
+      <section className="mx-auto max-w-[1600px] px-4 py-12">
         <div className="flex items-baseline justify-between mb-6">
           <h2 className="font-display text-2xl">Featured Products</h2>
           <Link href="/products" className="focus-ring text-sm text-[var(--color-forest)] font-medium hover:underline">
@@ -115,7 +115,7 @@ export default async function HomePage() {
             No featured products yet — add some in the admin portal.
           </p>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {featured.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}

@@ -7,7 +7,7 @@ import { TikTokIcon } from '@/components/TikTokIcon';
 export function Footer() {
   return (
     <footer className="mt-16 border-t border-[var(--color-border)] bg-[var(--color-parchment-warm)]">
-      <div className="mx-auto max-w-7xl px-4 py-10 grid grid-cols-1 sm:grid-cols-4 gap-8 text-sm text-[var(--color-ink-soft)]">
+      <div className="mx-auto max-w-[1600px] px-4 py-10 grid grid-cols-1 sm:grid-cols-4 gap-8 text-sm text-[var(--color-ink-soft)]">
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Image src="/logo.png" alt="GLOBALGETWEST" width={28} height={28} className="rounded-full" />

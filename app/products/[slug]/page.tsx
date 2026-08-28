@@ -19,7 +19,7 @@ export default async function ProductDetailPage({
   const publishedReviews = (product.reviews ?? []).filter((r: any) => r.is_published);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
+    <div className="mx-auto max-w-[1600px] px-4 py-6">
       {/* Breadcrumbs */}
       <nav className="text-xs text-[var(--color-ink-soft)] mb-6 flex items-center gap-1.5">
         <Link href="/" className="focus-ring hover:text-[var(--color-forest)] hover:underline">Home</Link>

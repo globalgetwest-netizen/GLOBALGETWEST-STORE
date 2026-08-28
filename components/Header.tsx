@@ -22,7 +22,7 @@ export async function Header() {
 
   return (
     <header className="sticky top-0 z-40 bg-[var(--color-forest)] text-[var(--color-parchment)]">
-      <div className="mx-auto max-w-7xl px-4">
+      <div className="mx-auto max-w-[1600px] px-4">
         <div className="flex items-center gap-6 h-16">
           <Link href="/" className="focus-ring flex items-center gap-2.5 shrink-0">
             <Image src="/logo.png" alt="GLOBALGETWEST" width={36} height={36} className="rounded-full" priority />
