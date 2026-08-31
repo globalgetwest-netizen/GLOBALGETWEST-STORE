@@ -2,9 +2,17 @@
 import Link from 'next/link';
 import { getFeaturedProducts } from '@/lib/catalog';
 import { ProductCard } from '@/components/ProductCard';
+import { supabaseServerClient } from '@/lib/supabase/server';
 
 export default async function HomePage() {
   const featured = await getFeaturedProducts(8);
+  const supabase = await supabaseServerClient();
+  const { data: categories } = await supabase
+    .from('categories')
+    .select('name, slug')
+    .eq('is_active', true)
+    .order('sort_order')
+    .limit(8);
 
   return (
     <div>
@@ -74,32 +82,25 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Shop by category */}
-      <section className="mx-auto max-w-[1600px] px-4 py-12">
-        <h2 className="font-display text-2xl mb-6">Shop by Category</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <CategoryTile
-            href="/products?category=immune-support"
-            label="Immune Support"
-            icon={<path d="M12 2l7 4v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-4z" />}
-          />
-          <CategoryTile
-            href="/products?category=liver-detox"
-            label="Liver & Detox"
-            icon={<path d="M12 2C8 6 6 9 6 13a6 6 0 0 0 12 0c0-4-2-7-6-11Z" />}
-          />
-          <CategoryTile
-            href="/products?category=digestive-health"
-            label="Digestive Health"
-            icon={<><circle cx="12" cy="12" r="9" /><path d="M8 12h8M12 8v8" /></>}
-          />
-          <CategoryTile
-            href="/products?category=teas-tinctures"
-            label="Teas & Tinctures"
-            icon={<><path d="M4 8h13a3 3 0 0 1 0 6h-1" /><path d="M4 8v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V8" /><path d="M6 3v2M9 3v2M12 3v2" /></>}
-          />
-        </div>
-      </section>
+      {/* Shop by category — pulled live from the same categories table the
+          nav uses, so this section can never show a different list than
+          the nav bar above it (previously hardcoded, causing exactly that
+          mismatch). Rename/delete a category in /admin/categories and both
+          this section and the nav update together. */}
+      {categories && categories.length > 0 && (
+        <section className="mx-auto max-w-[1600px] px-4 py-12">
+          <h2 className="font-display text-2xl mb-6">Shop by Category</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {categories.map((c) => (
+              <CategoryTile
+                key={c.slug}
+                href={`/products?category=${c.slug}`}
+                label={c.name}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Featured products */}
       <section className="mx-auto max-w-[1600px] px-4 py-12">
@@ -126,15 +127,19 @@ export default async function HomePage() {
   );
 }
 
-function CategoryTile({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
+function CategoryTile({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
       className="focus-ring group flex flex-col items-center gap-3 rounded-lg border border-[var(--color-border)] bg-white p-6 text-center transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-[var(--color-ochre)]"
     >
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-forest)]/8 text-[var(--color-forest)] transition-colors group-hover:bg-[var(--color-forest)] group-hover:text-[var(--color-parchment)]">
+        {/* Generic leaf/compound glyph — categories are admin-defined and
+            can't have hand-picked icons per name, so one consistent mark
+            represents all of them rather than guessing per category. */}
         <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          {icon}
+          <path d="M12 2C8 6 6 9 6 13a6 6 0 0 0 12 0c0-4-2-7-6-11Z" />
+          <path d="M12 10v10" />
         </svg>
       </div>
       <span className="font-medium text-sm text-[var(--color-ink)]">{label}</span>
