@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getFeaturedProducts } from '@/lib/catalog';
 import { ProductCard } from '@/components/ProductCard';
 import { supabaseServerClient } from '@/lib/supabase/server';
+import { NewsletterSignup } from '@/components/NewsletterSignup';
 
 export default async function HomePage() {
   const featured = await getFeaturedProducts(8);
@@ -171,6 +172,20 @@ export default async function HomePage() {
             ))}
           </div>
         )}
+      </section>
+
+      {/* Newsletter — a real, working signup (not decorative), a genuine
+          premium-storefront staple that was entirely missing. */}
+      <section className="bg-[var(--color-forest-dark)] text-[var(--color-parchment)]">
+        <div className="mx-auto max-w-[1600px] px-4 py-12 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div>
+            <h2 className="font-display text-2xl mb-1.5">Stay in the loop</h2>
+            <p className="text-[var(--color-parchment)]/70 text-sm">
+              New products, restocks, and origin stories — no spam, unsubscribe anytime.
+            </p>
+          </div>
+          <NewsletterSignup />
+        </div>
       </section>
     </div>
   );
