@@ -12,7 +12,7 @@ export default async function HomePage() {
     .select('name, slug')
     .eq('is_active', true)
     .order('sort_order')
-    .limit(8);
+    .limit(6);
 
   return (
     <div>
@@ -134,17 +134,41 @@ function CategoryTile({ href, label }: { href: string; label: string }) {
       className="focus-ring group flex flex-col items-center gap-3 rounded-lg border border-[var(--color-border)] bg-white p-6 text-center transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-[var(--color-ochre)]"
     >
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-forest)]/8 text-[var(--color-forest)] transition-colors group-hover:bg-[var(--color-forest)] group-hover:text-[var(--color-parchment)]">
-        {/* Generic leaf/compound glyph — categories are admin-defined and
-            can't have hand-picked icons per name, so one consistent mark
-            represents all of them rather than guessing per category. */}
         <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 2C8 6 6 9 6 13a6 6 0 0 0 12 0c0-4-2-7-6-11Z" />
-          <path d="M12 10v10" />
+          {iconForCategory(label)}
         </svg>
       </div>
       <span className="font-medium text-sm text-[var(--color-ink)]">{label}</span>
     </Link>
   );
+}
+
+// A small rotating set of distinct icons, picked deterministically from the
+// category name (same name always gets the same icon, but different
+// categories visually differ instead of repeating one identical glyph —
+// the flat repetition was a real weakness on a page with many categories.
+function iconForCategory(label: string): React.ReactNode {
+  const icons: React.ReactNode[] = [
+    <path key="leaf" d="M12 2C8 6 6 9 6 13a6 6 0 0 0 12 0c0-4-2-7-6-11Z M12 10v10" />,
+    <path key="shield" d="M12 2l7 4v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-4z" />,
+    <>
+      <circle key="c1" cx="12" cy="12" r="9" />
+      <path key="c2" d="M8 12h8M12 8v8" />
+    </>,
+    <>
+      <path key="t1" d="M4 8h13a3 3 0 0 1 0 6h-1" />
+      <path key="t2" d="M4 8v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V8" />
+      <path key="t3" d="M6 3v2M9 3v2M12 3v2" />
+    </>,
+    <>
+      <circle key="d1" cx="12" cy="12" r="3" />
+      <path key="d2" d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" />
+    </>,
+    <path key="heart" d="M12 21s-7-4.4-9.5-8.6C.8 9 2.3 5.5 5.6 5c2-.3 3.7.7 4.4 2.2C10.7 5.7 12.4 4.7 14.4 5c3.3.5 4.8 4 3.1 7.4C15 17.6 12 21 12 21z" />,
+  ];
+  let hash = 0;
+  for (let i = 0; i < label.length; i++) hash = (hash * 31 + label.charCodeAt(i)) % icons.length;
+  return icons[hash];
 }
 
 function TrustItem({ icon, label }: { icon: React.ReactNode; label: string }) {
