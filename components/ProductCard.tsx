@@ -1,6 +1,10 @@
+'use client';
 // components/ProductCard.tsx
+import { useState } from 'react';
 import Link from 'next/link';
-import { formatUsd, type ProductCardData } from '@/lib/catalog';
+import { useRouter } from 'next/navigation';
+import { formatUsd } from '@/lib/format';
+import type { ProductCardData } from '@/lib/catalog';
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -30,6 +34,38 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 export function ProductCard({ product }: { product: ProductCardData }) {
+  const [status, setStatus] = useState<'idle' | 'loading' | 'added' | 'error'>('idle');
+  const router = useRouter();
+
+  async function handleAddToCart(e: React.MouseEvent) {
+    // Stop the click from also triggering the card's outer Link navigation.
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!product.default_variant_id) return;
+    setStatus('loading');
+    try {
+      const res = await fetch('/api/cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ variantId: product.default_variant_id, quantity: 1 }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        if (res.status === 401) {
+          router.push(`/account/sign-in?next=/products/${product.slug}`);
+          return;
+        }
+        throw new Error(data.error ?? 'Failed to add to cart');
+      }
+      setStatus('added');
+      setTimeout(() => setStatus('idle'), 2000);
+    } catch {
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 2000);
+    }
+  }
+
   return (
     <Link
       href={`/products/${product.slug}`}
@@ -56,6 +92,9 @@ export function ProductCard({ product }: { product: ProductCardData }) {
       </div>
 
       <div className="p-3.5">
+        <p className="text-[10px] uppercase tracking-wider text-[var(--color-ochre)] font-semibold mb-1">
+          GLOBALGETWEST
+        </p>
         <h3 className="font-display text-[15px] leading-snug text-[var(--color-ink)] line-clamp-2">
           {product.name}
         </h3>
@@ -72,11 +111,21 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           </div>
         )}
 
-        <div className="mt-2">
+        <div className="mt-2 mb-3">
           <span className="font-semibold text-[17px] text-[var(--color-forest)]">
             from {formatUsd(product.price_from_usd_cents)}
           </span>
         </div>
+
+        {product.default_variant_id && (
+          <button
+            onClick={handleAddToCart}
+            disabled={status === 'loading'}
+            className="focus-ring w-full text-xs font-semibold rounded-md py-2 border border-[var(--color-forest)] text-[var(--color-forest)] transition-colors hover:bg-[var(--color-forest)] hover:text-[var(--color-parchment)] disabled:opacity-60"
+          >
+            {status === 'loading' ? 'Adding…' : status === 'added' ? 'Added ✓' : status === 'error' ? 'Try again' : 'Add to Cart'}
+          </button>
+        )}
       </div>
     </Link>
   );

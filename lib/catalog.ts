@@ -11,6 +11,9 @@ export interface ProductCardData {
   review_count: number;
   image_url: string | null;
   price_from_usd_cents: number;
+  // The variant matching price_from_usd_cents — lets a listing/grid card
+  // add to cart directly without navigating to the product page first.
+  default_variant_id: string | null;
 }
 
 export async function getFeaturedProducts(limit = 8): Promise<ProductCardData[]> {
@@ -21,7 +24,7 @@ export async function getFeaturedProducts(limit = 8): Promise<ProductCardData[]>
     .select(`
       id, slug, name, short_description, origin_country, avg_rating, review_count,
       product_images ( url, sort_order ),
-      product_variants ( price_usd_cents )
+      product_variants ( id, price_usd_cents )
     `)
     .eq('is_active', true)
     .eq('is_featured', true)
@@ -39,7 +42,7 @@ export async function getProductsByCategory(categorySlug?: string): Promise<Prod
     .select(`
       id, slug, name, short_description, origin_country, avg_rating, review_count,
       product_images ( url, sort_order ),
-      product_variants ( price_usd_cents ),
+      product_variants ( id, price_usd_cents ),
       categories!inner ( slug )
     `)
     .eq('is_active', true);
@@ -61,7 +64,7 @@ export async function searchProducts(term: string): Promise<ProductCardData[]> {
     .select(`
       id, slug, name, short_description, origin_country, avg_rating, review_count,
       product_images ( url, sort_order ),
-      product_variants ( price_usd_cents )
+      product_variants ( id, price_usd_cents )
     `)
     .eq('is_active', true)
     .textSearch('search_tsv', term, { type: 'websearch' });
@@ -99,7 +102,11 @@ export async function getProductBySlug(slug: string) {
 
 function mapToCard(row: any): ProductCardData {
   const images = (row.product_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order);
-  const prices = (row.product_variants ?? []).map((v: any) => v.price_usd_cents);
+  const variants = row.product_variants ?? [];
+  const prices = variants.map((v: any) => v.price_usd_cents);
+  const cheapest = variants.length
+    ? variants.reduce((min: any, v: any) => (v.price_usd_cents < min.price_usd_cents ? v : min), variants[0])
+    : null;
 
   return {
     id: row.id,
@@ -111,6 +118,7 @@ function mapToCard(row: any): ProductCardData {
     review_count: row.review_count ?? 0,
     image_url: images[0]?.url ?? null,
     price_from_usd_cents: prices.length ? Math.min(...prices) : 0,
+    default_variant_id: cheapest?.id ?? null,
   };
 }
 

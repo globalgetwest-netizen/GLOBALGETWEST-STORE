@@ -15,119 +15,124 @@ export default async function HomePage() {
     .order('sort_order')
     .limit(6);
 
-  // Real products for the hero showcase — a static logo/pattern in the hero
-  // doesn't read as a real storefront; every serious e-commerce site (Amazon,
-  // Alibaba, etc.) shows actual products with real prices right up front.
-  // Falls back to newest active products if nothing is marked "featured" yet.
-  const { data: showcaseRaw } = await supabase
+  // Real product images for the hero composition — per explicit direction,
+  // using actual stored product photos as-is, not a placeholder mark.
+  const { data: heroRaw } = await supabase
     .from('products')
     .select(`
       slug, name,
-      product_images ( url, sort_order ),
-      product_variants ( price_usd_cents )
+      product_images ( url, sort_order )
     `)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
-    .limit(4);
+    .limit(3);
 
-  const showcase = (showcaseRaw ?? []).map((p: any) => {
-    const images = (p.product_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order);
-    const prices = (p.product_variants ?? []).map((v: any) => v.price_usd_cents);
-    return {
-      slug: p.slug,
-      name: p.name,
-      image: images[0]?.url ?? null,
-      priceFrom: prices.length ? Math.min(...prices) : null,
-    };
-  });
+  const heroProducts = (heroRaw ?? [])
+    .map((p: any) => {
+      const images = (p.product_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order);
+      return { slug: p.slug, name: p.name, image: images[0]?.url ?? null };
+    })
+    .filter((p) => p.image !== null);
 
   return (
     <div>
       {/* Hero */}
       <section className="bg-[var(--color-forest)] text-[var(--color-parchment)]">
-        <div className="mx-auto max-w-[1600px] px-4 py-10 grid md:grid-cols-2 gap-8 items-center">
+        <div className="mx-auto max-w-[1600px] px-4 py-14 grid md:grid-cols-2 gap-10 items-center">
           <div>
-            <p className="uppercase tracking-[0.2em] text-[var(--color-ochre-light)] text-xs font-medium mb-4">
-              Sourced with Precision, Delivered Worldwide
+            <p className="uppercase tracking-[0.25em] text-[var(--color-ochre-light)] text-xs font-medium mb-5">
+              Sourced with Precision
             </p>
-            <h1 className="font-display text-4xl md:text-5xl leading-[1.1] mb-5">
-              Natural extracts of selected therapeutic plant compounds.
+            <h1 className="font-display text-4xl md:text-6xl leading-[1.08] mb-6">
+              Nature, refined<br />with precision.
             </h1>
-            <p className="text-[var(--color-parchment)]/80 text-base mb-8 max-w-md">
-              Every product on GLOBALGETWEST carries its ingredient sourcing,
-              origin country, and preparation method — so you know exactly
-              what you're taking, and where it came from.
+            <p className="text-[var(--color-parchment)]/75 text-base md:text-lg mb-3 max-w-md">
+              Premium botanical formulations, thoughtfully sourced and
+              prepared for modern wellness.
             </p>
-            <Link
-              href="/products"
-              className="focus-ring inline-block bg-[var(--color-ochre)] text-[var(--color-forest-dark)] font-semibold px-6 py-3 rounded-md hover:bg-[var(--color-ochre-light)] transition-colors"
-            >
-              Shop All Products
-            </Link>
+            <p className="text-[var(--color-parchment)]/60 text-sm mb-9 max-w-md">
+              Discover carefully selected products with transparent sourcing,
+              origin and preparation information — delivered worldwide.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <Link
+                href="/products"
+                className="focus-ring inline-block bg-[var(--color-ochre)] text-[var(--color-forest-dark)] font-semibold px-7 py-3 rounded-md hover:bg-[var(--color-ochre-light)] transition-colors"
+              >
+                Shop All Products →
+              </Link>
+              <Link
+                href="/products"
+                className="focus-ring inline-block border border-white/30 text-[var(--color-parchment)] font-semibold px-7 py-3 rounded-md hover:border-white/60 hover:bg-white/5 transition-colors"
+              >
+                Our Sourcing &amp; Quality →
+              </Link>
+            </div>
           </div>
 
-          {showcase.length > 0 ? (
-            <div className="hidden md:grid grid-cols-2 gap-3">
-              {showcase.map((p) => (
+          {/* Real product photography, arranged as a campaign-style
+              composition (one larger focal item + smaller supporting
+              items) rather than a flat identical grid — using the actual
+              stored images as-is, not recreated or regenerated. */}
+          {heroProducts.length > 0 ? (
+            <div className="hidden md:grid grid-cols-2 gap-4">
+              <Link
+                href={`/products/${heroProducts[0].slug}`}
+                className="focus-ring group row-span-2 rounded-xl overflow-hidden bg-white shadow-xl"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={heroProducts[0].image!}
+                  alt={heroProducts[0].name}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                />
+              </Link>
+              {heroProducts.slice(1, 3).map((p) => (
                 <Link
                   key={p.slug}
                   href={`/products/${p.slug}`}
-                  className="focus-ring group rounded-lg overflow-hidden bg-[var(--color-forest-dark)] border border-white/10 hover:border-[var(--color-ochre)] transition-colors"
+                  className="focus-ring group rounded-xl overflow-hidden bg-white shadow-lg aspect-square"
                 >
-                  <div className="aspect-square bg-white/5 overflow-hidden">
-                    {p.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={p.image}
-                        alt={p.name}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center text-white/30 text-xs">
-                        No image
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-2.5">
-                    <p className="text-xs text-[var(--color-parchment)]/90 line-clamp-1">{p.name}</p>
-                    {p.priceFrom !== null && (
-                      <p className="text-sm font-semibold text-[var(--color-ochre-light)] mt-0.5">
-                        from ${(p.priceFrom / 100).toFixed(2)}
-                      </p>
-                    )}
-                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.image!}
+                    alt={p.name}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                  />
                 </Link>
               ))}
             </div>
           ) : (
             <div className="hidden md:flex relative aspect-[4/3] rounded-lg bg-[var(--color-forest-dark)] border border-white/10 items-center justify-center overflow-hidden">
-              {/* Fallback only if there are truly no products yet */}
               <div
                 className="absolute inset-0"
                 style={{
-                  background: 'radial-gradient(circle at center, rgba(192,138,52,0.20) 0%, transparent 65%)',
+                  background: 'radial-gradient(circle at center, rgba(192,138,52,0.22) 0%, transparent 65%)',
                 }}
               />
-              <img src="/logo.png" alt="" className="relative w-2/3 h-2/3 object-contain drop-shadow-2xl" />
+              <img src="/logo.png" alt="" className="relative w-1/2 h-1/2 object-contain drop-shadow-2xl" />
             </div>
           )}
         </div>
       </section>
 
-      {/* Trust strip */}
+      {/* Trust bar */}
       <section className="border-b border-[var(--color-border)] bg-[var(--color-parchment-warm)]">
         <div className="mx-auto max-w-[1600px] px-4 py-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-[var(--color-ink-soft)]">
           <TrustItem
             icon={<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 0c2.5 2.5 4 5.7 4 10s-1.5 7.5-4 10M12 2C9.5 4.5 8 7.7 8 12s1.5 7.5 4 10M2 12h20" />}
-            label="Ships worldwide"
+            title="Ships Worldwide"
+            label="Fast, reliable international delivery."
           />
           <TrustItem
             icon={<><rect x="5" y="11" width="14" height="9" rx="1.5" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></>}
-            label="Secure checkout — cards, mobile money & more"
+            title="Secure Checkout"
+            label="Pay safely with available payment methods."
           />
           <TrustItem
             icon={<path d="M12 2C8 6 6 9 6 13a6 6 0 0 0 12 0c0-4-2-7-6-11Zm0 8v10" />}
-            label="Ingredient & origin disclosure on every product"
+            title="Full Disclosure"
+            label="Transparent ingredient, origin and preparation info."
           />
         </div>
       </section>
@@ -153,11 +158,11 @@ export default async function HomePage() {
       )}
 
       {/* Featured products */}
-      <section className="mx-auto max-w-[1600px] px-4 py-8">
-        <div className="flex items-baseline justify-between mb-6">
-          <h2 className="font-display text-2xl">Featured Products</h2>
+      <section className="mx-auto max-w-[1600px] px-4 py-14">
+        <div className="flex items-baseline justify-between mb-8">
+          <h2 className="font-display text-3xl">Featured Products</h2>
           <Link href="/products" className="focus-ring text-sm text-[var(--color-forest)] font-medium hover:underline">
-            View all →
+            View All Products →
           </Link>
         </div>
 
@@ -195,14 +200,18 @@ function CategoryTile({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="focus-ring group flex flex-col items-center gap-3 rounded-lg border border-[var(--color-border)] bg-white p-4 text-center transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-[var(--color-ochre)]"
+      className="focus-ring group flex flex-col items-center gap-3 rounded-lg border border-[var(--color-border)] bg-white p-5 text-center transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-[var(--color-ochre)]"
     >
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-forest)]/8 text-[var(--color-forest)] transition-colors group-hover:bg-[var(--color-forest)] group-hover:text-[var(--color-parchment)]">
         <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
           {iconForCategory(label)}
         </svg>
       </div>
-      <span className="font-medium text-sm text-[var(--color-ink)]">{label}</span>
+      <div>
+        <span className="font-medium text-sm text-[var(--color-ink)] block">{label}</span>
+        <span className="text-xs text-[var(--color-ink-soft)]">Shop the range</span>
+      </div>
+      <span className="text-[var(--color-ochre)] text-sm opacity-0 group-hover:opacity-100 transition-opacity">→</span>
     </Link>
   );
 }
@@ -235,17 +244,20 @@ function iconForCategory(label: string): React.ReactNode {
   return icons[hash];
 }
 
-function TrustItem({ icon, label }: { icon: React.ReactNode; label: string }) {
+function TrustItem({ icon, title, label }: { icon: React.ReactNode; title: string; label: string }) {
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-start gap-3">
       <svg
-        viewBox="0 0 24 24" width="18" height="18" fill="none"
+        viewBox="0 0 24 24" width="20" height="20" fill="none"
         stroke="var(--color-forest)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
-        className="shrink-0"
+        className="shrink-0 mt-0.5"
       >
         {icon}
       </svg>
-      <span>{label}</span>
+      <div>
+        <p className="font-medium text-[var(--color-ink)]">{title}</p>
+        <p className="text-[var(--color-ink-soft)] text-xs mt-0.5">{label}</p>
+      </div>
     </div>
   );
 }

@@ -1,13 +1,25 @@
 // components/Footer.tsx
+import Link from 'next/link';
 import Image from 'next/image';
 import { CONTACTS, SUPPORT_EMAIL } from '@/lib/contact';
 import { ContactAgentButton } from '@/components/ContactAgentButton';
 import { TikTokIcon } from '@/components/TikTokIcon';
+import { supabaseServerClient } from '@/lib/supabase/server';
 
-export function Footer() {
+export async function Footer() {
+  // Categories column pulled live from the database, same pattern as the
+  // header nav — never a separately-maintained hardcoded list.
+  const supabase = await supabaseServerClient();
+  const { data: categories } = await supabase
+    .from('categories')
+    .select('name, slug')
+    .eq('is_active', true)
+    .order('sort_order')
+    .limit(6);
+
   return (
     <footer className="mt-16 border-t border-[var(--color-border)] bg-[var(--color-parchment-warm)]">
-      <div className="mx-auto max-w-[1600px] px-4 py-8 grid grid-cols-1 sm:grid-cols-4 gap-6 text-sm text-[var(--color-ink-soft)]">
+      <div className="mx-auto max-w-[1600px] px-4 py-8 grid grid-cols-1 sm:grid-cols-5 gap-6 text-sm text-[var(--color-ink-soft)]">
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Image src="/logo.png" alt="GLOBALGETWEST" width={28} height={28} className="rounded-full" />
@@ -36,6 +48,27 @@ export function Footer() {
           </ul>
         </div>
         <div>
+          <h4 className="font-semibold text-[var(--color-ink)] mb-2">Company</h4>
+          <ul className="space-y-1">
+            <li>About GLOBALGETWEST</li>
+            <li>Sourcing &amp; quality</li>
+          </ul>
+        </div>
+        {categories && categories.length > 0 && (
+          <div>
+            <h4 className="font-semibold text-[var(--color-ink)] mb-2">Categories</h4>
+            <ul className="space-y-1">
+              {categories.map((c) => (
+                <li key={c.slug}>
+                  <Link href={`/products?category=${c.slug}`} className="hover:text-[var(--color-forest)] hover:underline">
+                    {c.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <div>
           <h4 className="font-semibold text-[var(--color-ink)] mb-2">WhatsApp Support</h4>
           <ul className="space-y-1.5">
             <li>
@@ -55,13 +88,6 @@ export function Footer() {
                 message="Hi, I have a question about GLOBALGETWEST."
               />
             </li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-semibold text-[var(--color-ink)] mb-2">Company</h4>
-          <ul className="space-y-1">
-            <li>About GLOBALGETWEST</li>
-            <li>Sourcing &amp; quality</li>
           </ul>
         </div>
       </div>
