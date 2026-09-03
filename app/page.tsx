@@ -14,6 +14,32 @@ export default async function HomePage() {
     .order('sort_order')
     .limit(6);
 
+  // Real products for the hero showcase — a static logo/pattern in the hero
+  // doesn't read as a real storefront; every serious e-commerce site (Amazon,
+  // Alibaba, etc.) shows actual products with real prices right up front.
+  // Falls back to newest active products if nothing is marked "featured" yet.
+  const { data: showcaseRaw } = await supabase
+    .from('products')
+    .select(`
+      slug, name,
+      product_images ( url, sort_order ),
+      product_variants ( price_usd_cents )
+    `)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(4);
+
+  const showcase = (showcaseRaw ?? []).map((p: any) => {
+    const images = (p.product_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order);
+    const prices = (p.product_variants ?? []).map((v: any) => v.price_usd_cents);
+    return {
+      slug: p.slug,
+      name: p.name,
+      image: images[0]?.url ?? null,
+      priceFrom: prices.length ? Math.min(...prices) : null,
+    };
+  });
+
   return (
     <div>
       {/* Hero */}
@@ -38,29 +64,52 @@ export default async function HomePage() {
               Shop All Products
             </Link>
           </div>
-          <div className="hidden md:flex relative aspect-[4/3] rounded-lg bg-[var(--color-forest-dark)] border border-white/10 items-center justify-center overflow-hidden">
-            {/* Subtle radial glow behind the emblem */}
-            <div
-              className="absolute inset-0"
-              style={{
-                background: 'radial-gradient(circle at center, rgba(192,138,52,0.20) 0%, transparent 65%)',
-              }}
-            />
-            {/* Faint decorative line-grid, evokes the globe/compass motif in the logo without competing with it */}
-            <svg className="absolute inset-0 w-full h-full opacity-[0.07]" viewBox="0 0 400 300" fill="none">
-              <circle cx="200" cy="150" r="120" stroke="var(--color-parchment)" strokeWidth="1" />
-              <circle cx="200" cy="150" r="90" stroke="var(--color-parchment)" strokeWidth="1" />
-              <line x1="80" y1="150" x2="320" y2="150" stroke="var(--color-parchment)" strokeWidth="1" />
-              <line x1="200" y1="30" x2="200" y2="270" stroke="var(--color-parchment)" strokeWidth="1" />
-              <ellipse cx="200" cy="150" rx="120" ry="45" stroke="var(--color-parchment)" strokeWidth="1" />
-              <ellipse cx="200" cy="150" rx="120" ry="85" stroke="var(--color-parchment)" strokeWidth="1" />
-            </svg>
-            <img
-              src="/logo.png"
-              alt=""
-              className="relative w-2/3 h-2/3 object-contain drop-shadow-2xl"
-            />
-          </div>
+
+          {showcase.length > 0 ? (
+            <div className="hidden md:grid grid-cols-2 gap-3">
+              {showcase.map((p) => (
+                <Link
+                  key={p.slug}
+                  href={`/products/${p.slug}`}
+                  className="focus-ring group rounded-lg overflow-hidden bg-[var(--color-forest-dark)] border border-white/10 hover:border-[var(--color-ochre)] transition-colors"
+                >
+                  <div className="aspect-square bg-white/5 overflow-hidden">
+                    {p.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-white/30 text-xs">
+                        No image
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-2.5">
+                    <p className="text-xs text-[var(--color-parchment)]/90 line-clamp-1">{p.name}</p>
+                    {p.priceFrom !== null && (
+                      <p className="text-sm font-semibold text-[var(--color-ochre-light)] mt-0.5">
+                        from ${(p.priceFrom / 100).toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="hidden md:flex relative aspect-[4/3] rounded-lg bg-[var(--color-forest-dark)] border border-white/10 items-center justify-center overflow-hidden">
+              {/* Fallback only if there are truly no products yet */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: 'radial-gradient(circle at center, rgba(192,138,52,0.20) 0%, transparent 65%)',
+                }}
+              />
+              <img src="/logo.png" alt="" className="relative w-2/3 h-2/3 object-contain drop-shadow-2xl" />
+            </div>
+          )}
         </div>
       </section>
 
