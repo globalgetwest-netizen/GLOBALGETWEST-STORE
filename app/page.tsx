@@ -45,7 +45,7 @@ export default async function HomePage() {
     <div>
       {/* Hero */}
       <section className="bg-[var(--color-forest)] text-[var(--color-parchment)]">
-        <div className="mx-auto max-w-[1600px] px-4 py-16 grid md:grid-cols-2 gap-10 items-center">
+        <div className="mx-auto max-w-[1600px] px-4 py-10 grid md:grid-cols-2 gap-8 items-center">
           <div>
             <p className="uppercase tracking-[0.2em] text-[var(--color-ochre-light)] text-xs font-medium mb-4">
               Sourced with Precision, Delivered Worldwide
@@ -138,7 +138,7 @@ export default async function HomePage() {
           mismatch). Rename/delete a category in /admin/categories and both
           this section and the nav update together. */}
       {categories && categories.length > 0 && (
-        <section className="mx-auto max-w-[1600px] px-4 py-12">
+        <section className="mx-auto max-w-[1600px] px-4 py-8">
           <h2 className="font-display text-2xl mb-6">Shop by Category</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {categories.map((c) => (
@@ -153,7 +153,7 @@ export default async function HomePage() {
       )}
 
       {/* Featured products */}
-      <section className="mx-auto max-w-[1600px] px-4 py-12">
+      <section className="mx-auto max-w-[1600px] px-4 py-8">
         <div className="flex items-baseline justify-between mb-6">
           <h2 className="font-display text-2xl">Featured Products</h2>
           <Link href="/products" className="focus-ring text-sm text-[var(--color-forest)] font-medium hover:underline">
@@ -177,7 +177,7 @@ export default async function HomePage() {
       {/* Newsletter — a real, working signup (not decorative), a genuine
           premium-storefront staple that was entirely missing. */}
       <section className="bg-[var(--color-forest-dark)] text-[var(--color-parchment)]">
-        <div className="mx-auto max-w-[1600px] px-4 py-12 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div className="mx-auto max-w-[1600px] px-4 py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
             <h2 className="font-display text-2xl mb-1.5">Stay in the loop</h2>
             <p className="text-[var(--color-parchment)]/70 text-sm">
@@ -195,7 +195,7 @@ function CategoryTile({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="focus-ring group flex flex-col items-center gap-3 rounded-lg border border-[var(--color-border)] bg-white p-6 text-center transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-[var(--color-ochre)]"
+      className="focus-ring group flex flex-col items-center gap-3 rounded-lg border border-[var(--color-border)] bg-white p-4 text-center transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-[var(--color-ochre)]"
     >
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-forest)]/8 text-[var(--color-forest)] transition-colors group-hover:bg-[var(--color-forest)] group-hover:text-[var(--color-parchment)]">
         <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">

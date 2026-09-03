@@ -7,7 +7,7 @@ import { TikTokIcon } from '@/components/TikTokIcon';
 export function Footer() {
   return (
     <footer className="mt-16 border-t border-[var(--color-border)] bg-[var(--color-parchment-warm)]">
-      <div className="mx-auto max-w-[1600px] px-4 py-10 grid grid-cols-1 sm:grid-cols-4 gap-8 text-sm text-[var(--color-ink-soft)]">
+      <div className="mx-auto max-w-[1600px] px-4 py-8 grid grid-cols-1 sm:grid-cols-4 gap-6 text-sm text-[var(--color-ink-soft)]">
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Image src="/logo.png" alt="GLOBALGETWEST" width={28} height={28} className="rounded-full" />
@@ -37,7 +37,7 @@ export function Footer() {
         </div>
         <div>
           <h4 className="font-semibold text-[var(--color-ink)] mb-2">WhatsApp Support</h4>
-          <ul className="space-y-2.5">
+          <ul className="space-y-1.5">
             <li>
               <ContactAgentButton
                 label={CONTACTS.usEurope.label}
