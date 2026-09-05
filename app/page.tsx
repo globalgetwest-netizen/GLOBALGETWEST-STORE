@@ -263,15 +263,15 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Sourcing & Quality — large editorial section, no fabricated
-          certifications or lab claims, only the general transparency
-          commitment. */}
+      {/* Sourcing & Quality — no fabricated certifications or lab claims,
+          only the general transparency commitment. The logo was previously
+          floating alone in a navy box here as a placeholder for imagery
+          that doesn't exist yet — removed, since it read as out of place
+          against the white system. Typography-led layout instead, a
+          legitimate pattern for a section without a real photo yet. */}
       <section className="bg-[var(--color-parchment-warm)]">
-        <div className="mx-auto max-w-[1600px] px-4 py-16 grid md:grid-cols-2 gap-12 items-center">
-          <div className="aspect-[4/3] rounded-xl bg-[var(--color-forest)] flex items-center justify-center overflow-hidden">
-            <img src="/logo.png" alt="" className="w-1/3 h-1/3 object-contain opacity-90" />
-          </div>
-          <div>
+        <div className="mx-auto max-w-[1600px] px-4 py-16">
+          <div className="max-w-2xl">
             <p className="uppercase tracking-[0.2em] text-[var(--color-ochre)] text-xs font-medium mb-3">
               Sourcing &amp; Quality
             </p>
