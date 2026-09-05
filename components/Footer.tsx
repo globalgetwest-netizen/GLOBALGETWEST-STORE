@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { CONTACTS, SUPPORT_EMAIL } from '@/lib/contact';
 import { ContactAgentButton } from '@/components/ContactAgentButton';
 import { TikTokIcon } from '@/components/TikTokIcon';
+import { PaymentBadges } from '@/components/PaymentBadges';
 import { supabaseServerClient } from '@/lib/supabase/server';
 
 export async function Footer() {
@@ -101,6 +102,12 @@ export async function Footer() {
               />
             </li>
           </ul>
+        </div>
+      </div>
+      <div className="border-t border-[var(--color-border)] py-5">
+        <div className="mx-auto max-w-[1600px] px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs text-[var(--color-ink-soft)]">We accept</p>
+          <PaymentBadges />
         </div>
       </div>
       <div className="border-t border-[var(--color-border)] py-4 text-center text-xs text-[var(--color-ink-soft)]">
