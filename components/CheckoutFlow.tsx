@@ -251,7 +251,7 @@ export function CheckoutFlow({ cart }: { cart: CartSummary }) {
                 phone={contactForCountry(address.countryCode).phone}
                 whatsappNumber={contactForCountry(address.countryCode).whatsapp}
                 message={`Hi, I'd like to arrange payment for an order.\n\nName: ${address.fullName}\nCountry: ${COUNTRIES.find((c) => c.code === address.countryCode)?.name ?? address.countryCode}\nOrder total: ${formatUsd(total)}\n\n(Please confirm the items with me.)`}
-                revealImmediately={contactForCountry(address.countryCode).label === CONTACTS.usEurope.label}
+                revealImmediately={contactForCountry(address.countryCode).label !== CONTACTS.africa.label}
               />
             </div>
           </section>

@@ -24,6 +24,7 @@ export function ContactAgentButton({ label, phone, whatsappNumber, message, reve
         onClick={() => setRevealed(true)}
         className="focus-ring flex items-center gap-2 text-sm hover:text-[var(--color-forest)] hover:underline"
       >
+        <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 shrink-0" aria-label="Active" />
         <WhatsAppIcon size={16} />
         Chat with Agent — {label}
       </button>
@@ -32,6 +33,7 @@ export function ContactAgentButton({ label, phone, whatsappNumber, message, reve
 
   return (
     <div className="flex items-center gap-2 text-sm">
+      <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 shrink-0" aria-label="Active" />
       <WhatsAppIcon size={16} />
       <a
         href={whatsappLink(whatsappNumber, message)}

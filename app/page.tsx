@@ -34,38 +34,68 @@ export default async function HomePage() {
     })
     .filter((p) => p.image !== null);
 
+  // Real products for the editorial "Discover" showcase — shown regardless
+  // of the "Featured" flag, so the page always has real content instead of
+  // ever showing an empty admin-facing message to a customer.
+  const { data: discoverRaw } = await supabase
+    .from('products')
+    .select(`
+      id, slug, name, short_description,
+      product_images ( url, sort_order ),
+      product_variants ( price_usd_cents )
+    `)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(3);
+
+  const discover = (discoverRaw ?? []).map((p: any) => {
+    const images = (p.product_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order);
+    const prices = (p.product_variants ?? []).map((v: any) => v.price_usd_cents);
+    return {
+      id: p.id,
+      slug: p.slug,
+      name: p.name,
+      description: p.short_description as string | null,
+      image: images[0]?.url ?? null,
+      priceFrom: prices.length ? Math.min(...prices) : null,
+    };
+  });
+
   return (
     <div>
-      {/* Hero */}
-      <section className="bg-[var(--color-forest)] text-[var(--color-parchment)]">
-        <div className="mx-auto max-w-[1600px] px-4 py-14 grid md:grid-cols-2 gap-10 items-center">
+      {/* Hero — full-height cinematic composition per spec (70-85vh) */}
+      <section className="bg-[var(--color-forest)] text-[var(--color-parchment)] min-h-[75vh] flex items-center">
+        <div className="mx-auto max-w-[1600px] px-4 py-16 grid md:grid-cols-2 gap-14 items-center w-full">
           <div>
-            <p className="uppercase tracking-[0.25em] text-[var(--color-ochre-light)] text-xs font-medium mb-5">
+            <p className="uppercase tracking-[0.3em] text-[var(--color-ochre-light)] text-xs font-medium mb-6">
               Sourced with Precision
             </p>
-            <h1 className="font-display text-4xl md:text-6xl leading-[1.08] mb-6">
+            <h1
+              className="font-display leading-[0.98] mb-7 tracking-tight"
+              style={{ fontSize: 'clamp(2.75rem, 6vw, 5.5rem)' }}
+            >
               Nature, refined<br />with precision.
             </h1>
-            <p className="text-[var(--color-parchment)]/75 text-base md:text-lg mb-3 max-w-md">
+            <p className="text-[var(--color-parchment)]/75 text-lg mb-3 max-w-md">
               Premium botanical formulations, thoughtfully sourced and
               prepared for modern wellness.
             </p>
-            <p className="text-[var(--color-parchment)]/60 text-sm mb-9 max-w-md">
+            <p className="text-[var(--color-parchment)]/55 text-sm mb-10 max-w-md">
               Discover carefully selected products with transparent sourcing,
               origin and preparation information — delivered worldwide.
             </p>
             <div className="flex flex-wrap gap-4">
               <Link
                 href="/products"
-                className="focus-ring inline-block bg-[var(--color-ochre)] text-[var(--color-forest-dark)] font-semibold px-7 py-3 rounded-md hover:bg-[var(--color-ochre-light)] transition-colors"
+                className="focus-ring inline-block bg-[var(--color-ochre)] text-[var(--color-forest-dark)] font-semibold px-8 py-3.5 rounded-md hover:bg-[var(--color-ochre-light)] transition-colors"
               >
-                Shop All Products →
+                Shop Products →
               </Link>
               <Link
                 href="/products"
-                className="focus-ring inline-block border border-white/30 text-[var(--color-parchment)] font-semibold px-7 py-3 rounded-md hover:border-white/60 hover:bg-white/5 transition-colors"
+                className="focus-ring inline-block border border-white/30 text-[var(--color-parchment)] font-semibold px-8 py-3.5 rounded-md hover:border-white/60 hover:bg-white/5 transition-colors"
               >
-                Our Sourcing &amp; Quality →
+                Explore Sourcing →
               </Link>
             </div>
           </div>
@@ -157,26 +187,129 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Featured products */}
-      <section className="mx-auto max-w-[1600px] px-4 py-14">
-        <div className="flex items-baseline justify-between mb-8">
-          <h2 className="font-display text-3xl">Featured Products</h2>
-          <Link href="/products" className="focus-ring text-sm text-[var(--color-forest)] font-medium hover:underline">
-            View All Products →
-          </Link>
-        </div>
-
-        {featured.length === 0 ? (
-          <p className="text-[var(--color-ink-soft)] text-sm">
-            No featured products yet — add some in the admin portal.
+      {/* Discover GLOBALGETWEST — editorial showcase using real products
+          regardless of the "Featured" flag, so this section always has
+          real content rather than risking an empty state. */}
+      {discover.length > 0 && (
+        <section className="mx-auto max-w-[1600px] px-4 py-16">
+          <p className="uppercase tracking-[0.2em] text-[var(--color-ochre)] text-xs font-medium mb-3">
+            Discover GLOBALGETWEST
           </p>
-        ) : (
+          <h2 className="font-display text-3xl mb-10 max-w-lg">
+            Selected formulations for different wellness needs.
+          </h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            <Link
+              href={`/products/${discover[0].slug}`}
+              className="focus-ring group rounded-xl overflow-hidden border border-[var(--color-border)] bg-white transition-shadow hover:shadow-xl"
+            >
+              <div className="aspect-[4/3] bg-[var(--color-parchment-warm)] overflow-hidden">
+                {discover[0].image && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={discover[0].image}
+                    alt={discover[0].name}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                  />
+                )}
+              </div>
+              <div className="p-6">
+                <h3 className="font-display text-xl mb-1.5">{discover[0].name}</h3>
+                {discover[0].description && (
+                  <p className="text-sm text-[var(--color-ink-soft)] mb-3 line-clamp-2">{discover[0].description}</p>
+                )}
+                <span className="text-sm font-medium text-[var(--color-forest)]">Explore product →</span>
+              </div>
+            </Link>
+
+            <div className="grid gap-6">
+              {discover.slice(1, 3).map((p) => (
+                <Link
+                  key={p.slug}
+                  href={`/products/${p.slug}`}
+                  className="focus-ring group flex gap-4 rounded-xl overflow-hidden border border-[var(--color-border)] bg-white p-4 transition-shadow hover:shadow-lg"
+                >
+                  <div className="w-28 h-28 shrink-0 rounded-lg bg-[var(--color-parchment-warm)] overflow-hidden">
+                    {p.image && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                      />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-display text-base mb-1 line-clamp-1">{p.name}</h3>
+                    {p.description && (
+                      <p className="text-xs text-[var(--color-ink-soft)] mb-2 line-clamp-2">{p.description}</p>
+                    )}
+                    <span className="text-xs font-medium text-[var(--color-forest)]">Explore product →</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Featured products — hidden entirely when empty, never shows an
+          admin-facing placeholder message to a real customer. */}
+      {featured.length > 0 && (
+        <section className="mx-auto max-w-[1600px] px-4 py-14">
+          <div className="flex items-baseline justify-between mb-8">
+            <h2 className="font-display text-3xl">Featured Products</h2>
+            <Link href="/products" className="focus-ring text-sm text-[var(--color-forest)] font-medium hover:underline">
+              View All Products →
+            </Link>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {featured.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
           </div>
-        )}
+        </section>
+      )}
+
+      {/* Sourcing & Quality — large editorial section, no fabricated
+          certifications or lab claims, only the general transparency
+          commitment. */}
+      <section className="bg-[var(--color-parchment-warm)]">
+        <div className="mx-auto max-w-[1600px] px-4 py-16 grid md:grid-cols-2 gap-12 items-center">
+          <div className="aspect-[4/3] rounded-xl bg-[var(--color-forest)] flex items-center justify-center overflow-hidden">
+            <img src="/logo.png" alt="" className="w-1/3 h-1/3 object-contain opacity-90" />
+          </div>
+          <div>
+            <p className="uppercase tracking-[0.2em] text-[var(--color-ochre)] text-xs font-medium mb-3">
+              Sourcing &amp; Quality
+            </p>
+            <h2 className="font-display text-3xl mb-4">Know what you're buying.</h2>
+            <p className="text-[var(--color-ink-soft)] mb-6 max-w-md">
+              Transparency begins with understanding the product. We provide
+              available information about ingredients, origin and preparation
+              so customers can make informed purchasing decisions.
+            </p>
+            <Link href="/products" className="focus-ring text-sm font-semibold text-[var(--color-forest)] hover:underline">
+              Learn More →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Global Delivery */}
+      <section className="bg-[var(--color-forest)] text-[var(--color-parchment)]">
+        <div className="mx-auto max-w-[1600px] px-4 py-16 text-center">
+          <p className="uppercase tracking-[0.2em] text-[var(--color-ochre-light)] text-xs font-medium mb-3">
+            Global Delivery
+          </p>
+          <h2 className="font-display text-3xl mb-4">From GLOBALGETWEST to customers around the world.</h2>
+          <p className="text-[var(--color-parchment)]/70 max-w-xl mx-auto mb-6">
+            We make international product access simple, transparent and convenient.
+          </p>
+          <Link href="/products" className="focus-ring inline-block text-sm font-semibold text-[var(--color-ochre-light)] hover:underline">
+            Ships worldwide →
+          </Link>
+        </div>
       </section>
 
       {/* Newsletter — a real, working signup (not decorative), a genuine

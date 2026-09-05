@@ -82,9 +82,21 @@ export async function Footer() {
             </li>
             <li>
               <ContactAgentButton
-                label={CONTACTS.asiaAfrica.label}
-                phone={CONTACTS.asiaAfrica.phone}
-                whatsappNumber={CONTACTS.asiaAfrica.whatsapp}
+                label={CONTACTS.asia.label}
+                phone={CONTACTS.asia.phone}
+                whatsappNumber={CONTACTS.asia.whatsapp}
+                message="Hi, I have a question about GLOBALGETWEST."
+                revealImmediately
+              />
+            </li>
+            <li>
+              {/* Africa number kept hidden-until-click — it's a Ghana
+                  country code, and the brand's stated position is to never
+                  visibly indicate a Ghana/Africa presence on the site. */}
+              <ContactAgentButton
+                label={CONTACTS.africa.label}
+                phone={CONTACTS.africa.phone}
+                whatsappNumber={CONTACTS.africa.whatsapp}
                 message="Hi, I have a question about GLOBALGETWEST."
               />
             </li>
