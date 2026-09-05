@@ -121,7 +121,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           <button
             onClick={handleAddToCart}
             disabled={status === 'loading'}
-            className="focus-ring w-full text-xs font-semibold rounded-md py-2 border border-[var(--color-forest)] text-[var(--color-forest)] transition-colors hover:bg-[var(--color-forest)] hover:text-[var(--color-parchment)] disabled:opacity-60"
+            className="focus-ring w-full text-xs font-semibold rounded-md py-2 border border-[var(--color-ink)] text-[var(--color-ink)] transition-colors hover:bg-[var(--color-charcoal)] hover:text-white hover:border-[var(--color-charcoal)] disabled:opacity-60"
           >
             {status === 'loading' ? 'Adding…' : status === 'added' ? 'Added ✓' : status === 'error' ? 'Try again' : 'Add to Cart'}
           </button>

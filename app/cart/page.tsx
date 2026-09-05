@@ -56,7 +56,7 @@ export default async function CartPage() {
             </p>
             <Link
               href="/checkout"
-              className="focus-ring block text-center bg-[var(--color-forest)] text-[var(--color-parchment)] font-semibold px-6 py-3 rounded-md hover:bg-[var(--color-forest-dark)] transition-colors"
+              className="focus-ring block text-center bg-[var(--color-charcoal)] text-white font-semibold px-6 py-3 rounded hover:bg-black transition-colors"
             >
               Proceed to Checkout
             </Link>

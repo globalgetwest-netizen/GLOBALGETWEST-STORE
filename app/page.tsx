@@ -63,39 +63,37 @@ export default async function HomePage() {
 
   return (
     <div>
-      {/* Hero — full-height cinematic composition per spec (70-85vh) */}
-      <section className="bg-[var(--color-forest)] text-[var(--color-parchment)] min-h-[75vh] flex items-center">
+      {/* Hero — white/off-white editorial background per explicit direction,
+          real product photography as the visual focus. Text is now dark
+          (was light-on-navy before this pivot). */}
+      <section className="bg-white min-h-[70vh] flex items-center border-b border-[var(--color-border)]">
         <div className="mx-auto max-w-[1600px] px-4 py-16 grid md:grid-cols-2 gap-14 items-center w-full">
           <div>
-            <p className="uppercase tracking-[0.3em] text-[var(--color-ochre-light)] text-xs font-medium mb-6">
-              Sourced with Precision
+            <p className="uppercase tracking-[0.3em] text-[var(--color-forest)] text-xs font-medium mb-6">
+              GLOBALGETWEST
             </p>
             <h1
-              className="font-display leading-[0.98] mb-7 tracking-tight"
+              className="font-display leading-[0.98] mb-7 tracking-tight text-[var(--color-ink)]"
               style={{ fontSize: 'clamp(2.75rem, 6vw, 5.5rem)' }}
             >
               Nature, refined<br />with precision.
             </h1>
-            <p className="text-[var(--color-parchment)]/75 text-lg mb-3 max-w-md">
-              Premium botanical formulations, thoughtfully sourced and
-              prepared for modern wellness.
-            </p>
-            <p className="text-[var(--color-parchment)]/55 text-sm mb-10 max-w-md">
-              Discover carefully selected products with transparent sourcing,
-              origin and preparation information — delivered worldwide.
+            <p className="text-[var(--color-ink-soft)] text-lg mb-8 max-w-md">
+              Thoughtfully selected botanical products, presented with
+              transparency and prepared for customers around the world.
             </p>
             <div className="flex flex-wrap gap-4">
               <Link
                 href="/products"
-                className="focus-ring inline-block bg-[var(--color-ochre)] text-[var(--color-forest-dark)] font-semibold px-8 py-3.5 rounded-md hover:bg-[var(--color-ochre-light)] transition-colors"
+                className="focus-ring inline-block bg-[var(--color-charcoal)] text-white font-semibold px-8 py-3.5 rounded hover:bg-black transition-colors"
               >
-                Shop Products →
+                Shop All Products →
               </Link>
               <Link
                 href="/products"
-                className="focus-ring inline-block border border-white/30 text-[var(--color-parchment)] font-semibold px-8 py-3.5 rounded-md hover:border-white/60 hover:bg-white/5 transition-colors"
+                className="focus-ring inline-block bg-white border border-[var(--color-ink)] text-[var(--color-ink)] font-semibold px-8 py-3.5 rounded hover:bg-[var(--color-parchment-warm)] transition-colors"
               >
-                Explore Sourcing →
+                Explore Our Sourcing →
               </Link>
             </div>
           </div>
@@ -108,7 +106,7 @@ export default async function HomePage() {
             <div className="hidden md:grid grid-cols-2 gap-4">
               <Link
                 href={`/products/${heroProducts[0].slug}`}
-                className="focus-ring group row-span-2 rounded-xl overflow-hidden bg-white shadow-xl"
+                className="focus-ring group row-span-2 overflow-hidden bg-[var(--color-parchment-warm)] shadow-sm"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -121,7 +119,7 @@ export default async function HomePage() {
                 <Link
                   key={p.slug}
                   href={`/products/${p.slug}`}
-                  className="focus-ring group rounded-xl overflow-hidden bg-white shadow-lg aspect-square"
+                  className="focus-ring group overflow-hidden bg-[var(--color-parchment-warm)] shadow-sm aspect-square"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -133,14 +131,8 @@ export default async function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="hidden md:flex relative aspect-[4/3] rounded-lg bg-[var(--color-forest-dark)] border border-white/10 items-center justify-center overflow-hidden">
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: 'radial-gradient(circle at center, rgba(192,138,52,0.22) 0%, transparent 65%)',
-                }}
-              />
-              <img src="/logo.png" alt="" className="relative w-1/2 h-1/2 object-contain drop-shadow-2xl" />
+            <div className="hidden md:flex relative aspect-[4/3] bg-[var(--color-parchment-warm)] items-center justify-center overflow-hidden">
+              <img src="/logo.png" alt="" className="relative w-1/2 h-1/2 object-contain opacity-80" />
             </div>
           )}
         </div>
@@ -297,29 +289,30 @@ export default async function HomePage() {
       </section>
 
       {/* Global Delivery */}
-      <section className="bg-[var(--color-forest)] text-[var(--color-parchment)]">
+      <section className="bg-[var(--color-parchment-warm)] border-t border-[var(--color-border)]">
         <div className="mx-auto max-w-[1600px] px-4 py-16 text-center">
-          <p className="uppercase tracking-[0.2em] text-[var(--color-ochre-light)] text-xs font-medium mb-3">
+          <p className="uppercase tracking-[0.2em] text-[var(--color-forest)] text-xs font-medium mb-3">
             Global Delivery
           </p>
-          <h2 className="font-display text-3xl mb-4">From GLOBALGETWEST to customers around the world.</h2>
-          <p className="text-[var(--color-parchment)]/70 max-w-xl mx-auto mb-6">
-            We make international product access simple, transparent and convenient.
+          <h2 className="font-display text-3xl mb-4 text-[var(--color-ink)]">GLOBALGETWEST, wherever you are.</h2>
+          <p className="text-[var(--color-ink-soft)] max-w-xl mx-auto mb-6">
+            From our collection to customers around the world, we make
+            international product access simple, transparent and convenient.
           </p>
-          <Link href="/products" className="focus-ring inline-block text-sm font-semibold text-[var(--color-ochre-light)] hover:underline">
-            Ships worldwide →
+          <Link href="/products" className="focus-ring inline-block text-sm font-semibold text-[var(--color-forest)] hover:underline">
+            Explore Products →
           </Link>
         </div>
       </section>
 
       {/* Newsletter — a real, working signup (not decorative), a genuine
           premium-storefront staple that was entirely missing. */}
-      <section className="bg-[var(--color-forest-dark)] text-[var(--color-parchment)]">
-        <div className="mx-auto max-w-[1600px] px-4 py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      <section className="bg-white border-t border-[var(--color-border)]">
+        <div className="mx-auto max-w-[1600px] px-4 py-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
-            <h2 className="font-display text-2xl mb-1.5">Stay in the loop</h2>
-            <p className="text-[var(--color-parchment)]/70 text-sm">
-              New products, restocks, and origin stories — no spam, unsubscribe anytime.
+            <h2 className="font-display text-2xl mb-1.5 text-[var(--color-ink)]">Stay connected with GLOBALGETWEST</h2>
+            <p className="text-[var(--color-ink-soft)] text-sm">
+              Receive product updates, new arrivals, restocks and stories from GLOBALGETWEST.
             </p>
           </div>
           <NewsletterSignup />

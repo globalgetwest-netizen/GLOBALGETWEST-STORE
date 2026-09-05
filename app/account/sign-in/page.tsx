@@ -63,7 +63,7 @@ function SignInForm() {
 
         <button
           type="submit" disabled={loading}
-          className="focus-ring w-full bg-[var(--color-forest)] text-[var(--color-parchment)] font-semibold px-5 py-2.5 rounded-md hover:bg-[var(--color-forest-dark)] disabled:opacity-60"
+          className="focus-ring w-full bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black disabled:opacity-60"
         >
           {loading ? 'Signing in…' : 'Sign In'}
         </button>

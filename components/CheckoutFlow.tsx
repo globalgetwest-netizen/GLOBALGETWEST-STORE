@@ -151,7 +151,7 @@ export function CheckoutFlow({ cart }: { cart: CartSummary }) {
             <button
               onClick={fetchRates}
               disabled={loading || !address.fullName || !address.line1 || !address.city}
-              className="focus-ring mt-4 bg-[var(--color-forest)] text-[var(--color-parchment)] font-semibold px-5 py-2.5 rounded-md hover:bg-[var(--color-forest-dark)] disabled:opacity-50"
+              className="focus-ring mt-4 bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black disabled:opacity-50"
             >
               {loading ? 'Finding shipping options…' : 'Continue to Shipping'}
             </button>
@@ -190,7 +190,7 @@ export function CheckoutFlow({ cart }: { cart: CartSummary }) {
             {rates.length > 0 && (
               <button
                 onClick={() => setStep('payment')}
-                className="focus-ring mt-4 bg-[var(--color-forest)] text-[var(--color-parchment)] font-semibold px-5 py-2.5 rounded-md hover:bg-[var(--color-forest-dark)]"
+                className="focus-ring mt-4 bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black"
               >
                 Continue to Payment
               </button>
@@ -229,7 +229,7 @@ export function CheckoutFlow({ cart }: { cart: CartSummary }) {
                 <button
                   onClick={submitOrder}
                   disabled={loading}
-                  className="focus-ring mt-4 w-full bg-[var(--color-ochre)] text-[var(--color-forest-dark)] font-semibold px-5 py-3 rounded-md hover:bg-[var(--color-ochre-light)] disabled:opacity-50"
+                  className="focus-ring mt-4 w-full bg-[var(--color-charcoal)] text-white font-semibold px-5 py-3 rounded hover:bg-black disabled:opacity-50"
                 >
                   {loading ? 'Redirecting to payment…' : `Pay ${formatUsd(total)}`}
                 </button>

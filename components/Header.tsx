@@ -21,12 +21,12 @@ export async function Header() {
     .limit(6);
 
   return (
-    <header className="sticky top-0 z-40 bg-[var(--color-forest)] text-[var(--color-parchment)]">
+    <header className="sticky top-0 z-40 bg-white text-[var(--color-ink)] border-b border-[var(--color-border)]">
       <div className="mx-auto max-w-[1600px] px-4">
         <div className="flex items-center gap-6 h-16">
           <Link href="/" className="focus-ring flex items-center gap-2.5 shrink-0">
             <Image src="/logo.png" alt="GLOBALGETWEST" width={36} height={36} className="rounded-full" priority />
-            <span className="font-display text-xl tracking-tight">GLOBALGETWEST</span>
+            <span className="font-display text-xl tracking-tight text-[var(--color-ink)]">GLOBALGETWEST</span>
           </Link>
 
           <form action="/search" className="flex-1 max-w-2xl">
@@ -35,41 +35,41 @@ export async function Header() {
               id="site-search"
               name="q"
               type="search"
-              placeholder="Search natural extracts, ingredients, conditions..."
-              className="focus-ring w-full rounded-md px-3.5 py-2 text-[var(--color-ink)] bg-[var(--color-parchment)] placeholder:text-[var(--color-ink-soft)] text-sm"
+              placeholder="Search products, categories and wellness"
+              className="focus-ring w-full rounded px-3.5 py-2 text-[var(--color-ink)] bg-[var(--color-parchment-warm)] border border-[var(--color-border)] placeholder:text-[var(--color-ink-soft)] text-sm"
             />
           </form>
 
           <nav className="flex items-center gap-5 text-sm shrink-0">
             {user ? (
               <>
-                <Link href="/account/orders" className="focus-ring hover:text-[var(--color-ochre-light)]">
+                <Link href="/account/orders" className="focus-ring text-[var(--color-ink-soft)] hover:text-[var(--color-forest)]">
                   Orders
                 </Link>
-                <Link href="/account" className="focus-ring hover:text-[var(--color-ochre-light)]">
+                <Link href="/account" className="focus-ring text-[var(--color-ink-soft)] hover:text-[var(--color-forest)]">
                   Account
                 </Link>
               </>
             ) : (
-              <Link href="/account/sign-in" className="focus-ring hover:text-[var(--color-ochre-light)]">
+              <Link href="/account/sign-in" className="focus-ring text-[var(--color-ink-soft)] hover:text-[var(--color-forest)]">
                 Sign In
               </Link>
             )}
-            <Link href="/cart" className="focus-ring hover:text-[var(--color-ochre-light)] font-medium">
+            <Link href="/cart" className="focus-ring text-[var(--color-ink)] hover:text-[var(--color-forest)] font-medium">
               Cart
             </Link>
           </nav>
         </div>
 
-        <nav className="flex gap-5 h-10 items-center text-[13px] border-t border-white/10 overflow-x-auto">
-          <Link href="/products" className="focus-ring whitespace-nowrap hover:text-[var(--color-ochre-light)]">
+        <nav className="flex gap-5 h-10 items-center text-[13px] border-t border-[var(--color-border)] overflow-x-auto">
+          <Link href="/products" className="focus-ring whitespace-nowrap text-[var(--color-ink-soft)] hover:text-[var(--color-forest)]">
             All Products
           </Link>
           {(navCategories ?? []).map((c) => (
             <Link
               key={c.slug}
               href={`/products?category=${c.slug}`}
-              className="focus-ring whitespace-nowrap hover:text-[var(--color-ochre-light)]"
+              className="focus-ring whitespace-nowrap text-[var(--color-ink-soft)] hover:text-[var(--color-forest)]"
             >
               {c.name}
             </Link>

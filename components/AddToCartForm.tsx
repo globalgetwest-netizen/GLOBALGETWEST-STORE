@@ -84,7 +84,7 @@ export function AddToCartForm({ variants }: { variants: Variant[] }) {
         <button
           onClick={handleAddToCart}
           disabled={status === 'loading'}
-          className="focus-ring flex-1 bg-[var(--color-forest)] text-[var(--color-parchment)] font-semibold px-6 py-2.5 rounded-md hover:bg-[var(--color-forest-dark)] transition-colors disabled:opacity-60"
+          className="focus-ring flex-1 bg-[var(--color-charcoal)] text-white font-semibold px-6 py-2.5 rounded hover:bg-black transition-colors disabled:opacity-60"
         >
           {status === 'loading' ? 'Adding…' : status === 'added' ? 'Added ✓' : 'Add to Cart'}
         </button>

@@ -2,25 +2,27 @@
 @import "tailwindcss";
 
 :root {
-  /* Palette rebuilt to match the real logo (sampled directly from the
-     brand mark) — deep navy + warm gold + clean neutral white, replacing
-     the placeholder green/beige "apothecary" direction chosen before the
-     real logo existed. Every component references these same variable
-     names, so this file is the single source of truth for the whole
-     site's color identity. */
-  --color-forest: #0F2A45;        /* primary navy — header, CTAs, sidebars */
-  --color-forest-dark: #081A2C;   /* deeper navy — footer, admin/staff nav */
-  --color-parchment: #FAFAF9;     /* clean near-white page background */
-  --color-parchment-warm: #F2F4F6;/* light neutral gray — cards, secondary panels */
-  --color-ochre: #C08A34;         /* real gold, sampled from the logo's rays */
-  --color-ochre-light: #D9AF56;   /* lighter gold — hover states */
-  --color-ink: #14181F;           /* near-black body text */
-  --color-ink-soft: #545B66;      /* secondary/muted text */
-  --color-border: #E2E5EA;        /* neutral border, no warm tint */
+  /* Rebuilt per explicit direction: predominantly WHITE premium editorial
+     surface, with navy/gold reduced to sparse accent use (buttons, small
+     labels, borders) rather than large section backgrounds. This is a real
+     reversal from the earlier navy-dominant hero/header treatment — that
+     was a deliberate choice at the time, this supersedes it now. */
+  --color-parchment: #FFFFFF;      /* primary page background — was navy-adjacent, now white */
+  --color-parchment-warm: #FAFAF8; /* secondary section background */
+  --color-ink: #111111;            /* primary text */
+  --color-ink-soft: #5F5F5F;       /* secondary text */
+  --color-ink-muted: #888888;      /* tertiary/muted text */
+  --color-border: #E8E8E8;
+
+  --color-forest: #0F2A45;         /* navy — now an ACCENT color only (small labels, borders, hover states), not a section background */
+  --color-forest-dark: #081A2C;
+  --color-ochre: #C08A34;          /* gold — accent only, used sparingly */
+  --color-ochre-light: #D9AF56;
+  --color-charcoal: #111111;       /* primary button fill, per spec: charcoal/black primary buttons, not colored */
   --color-danger: #B3261E;
 
-  --font-display: "Playfair Display", ui-serif, Georgia, serif;
-  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Instrument Serif", "Playfair Display", ui-serif, Georgia, serif;
+  --font-body: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 * {
