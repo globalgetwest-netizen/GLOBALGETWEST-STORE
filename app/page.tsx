@@ -117,7 +117,7 @@ export default async function HomePage() {
           keeps each full image visible, uncropped, within its grid cell. */}
       {banners && banners.length > 0 && (
         <section className="mx-auto max-w-[1600px] px-4 py-10">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
             {banners.map((b) => (
               <div key={b.id}>
                 {b.link_url ? (
