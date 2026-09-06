@@ -21,25 +21,6 @@ export default async function HomePage() {
     .eq('is_active', true)
     .order('sort_order');
 
-  // Real product images for the hero composition — per explicit direction,
-  // using actual stored product photos as-is, not a placeholder mark.
-  const { data: heroRaw } = await supabase
-    .from('products')
-    .select(`
-      slug, name,
-      product_images ( url, sort_order )
-    `)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
-    .limit(3);
-
-  const heroProducts = (heroRaw ?? [])
-    .map((p: any) => {
-      const images = (p.product_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order);
-      return { slug: p.slug, name: p.name, image: images[0]?.url ?? null };
-    })
-    .filter((p) => p.image !== null);
-
   // Real products for the editorial "Discover" showcase — shown regardless
   // of the "Featured" flag, so the page always has real content instead of
   // ever showing an empty admin-facing message to a customer.
@@ -73,74 +54,34 @@ export default async function HomePage() {
           real product photography as the visual focus. Text is now dark
           (was light-on-navy before this pivot). */}
       <section className="bg-white min-h-[70vh] flex items-center border-b border-[var(--color-border)]">
-        <div className="mx-auto max-w-[1600px] px-4 py-16 grid md:grid-cols-2 gap-14 items-center w-full">
-          <div>
-            <p className="uppercase tracking-[0.3em] text-[var(--color-forest)] text-xs font-medium mb-6">
-              GLOBALGETWEST
-            </p>
-            <h1
-              className="font-display leading-[0.98] mb-7 tracking-tight text-[var(--color-ink)]"
-              style={{ fontSize: 'clamp(2.75rem, 6vw, 5.5rem)' }}
+        <div className="mx-auto max-w-[900px] px-4 py-20 text-center">
+          <p className="uppercase tracking-[0.3em] text-[var(--color-forest)] text-xs font-medium mb-6">
+            GLOBALGETWEST
+          </p>
+          <h1
+            className="font-display leading-[0.98] mb-7 tracking-tight text-[var(--color-ink)]"
+            style={{ fontSize: 'clamp(2.75rem, 6vw, 5.5rem)' }}
+          >
+            Nature, refined<br />with precision.
+          </h1>
+          <p className="text-[var(--color-ink-soft)] text-lg mb-8 max-w-lg mx-auto">
+            Thoughtfully selected botanical products, presented with
+            transparency and prepared for customers around the world.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link
+              href="/products"
+              className="focus-ring inline-block bg-[var(--color-charcoal)] text-white font-semibold px-8 py-3.5 rounded hover:bg-black transition-colors"
             >
-              Nature, refined<br />with precision.
-            </h1>
-            <p className="text-[var(--color-ink-soft)] text-lg mb-8 max-w-md">
-              Thoughtfully selected botanical products, presented with
-              transparency and prepared for customers around the world.
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <Link
-                href="/products"
-                className="focus-ring inline-block bg-[var(--color-charcoal)] text-white font-semibold px-8 py-3.5 rounded hover:bg-black transition-colors"
-              >
-                Shop All Products →
-              </Link>
-              <Link
-                href="/products"
-                className="focus-ring inline-block bg-white border border-[var(--color-ink)] text-[var(--color-ink)] font-semibold px-8 py-3.5 rounded hover:bg-[var(--color-parchment-warm)] transition-colors"
-              >
-                Explore Our Sourcing →
-              </Link>
-            </div>
+              Shop All Products →
+            </Link>
+            <Link
+              href="/products"
+              className="focus-ring inline-block bg-white border border-[var(--color-ink)] text-[var(--color-ink)] font-semibold px-8 py-3.5 rounded hover:bg-[var(--color-parchment-warm)] transition-colors"
+            >
+              Explore Our Sourcing →
+            </Link>
           </div>
-
-          {/* Real product photography, arranged as a campaign-style
-              composition (one larger focal item + smaller supporting
-              items) rather than a flat identical grid — using the actual
-              stored images as-is, not recreated or regenerated. */}
-          {heroProducts.length > 0 ? (
-            <div className="hidden md:grid grid-cols-2 gap-4">
-              <Link
-                href={`/products/${heroProducts[0].slug}`}
-                className="focus-ring group row-span-2 overflow-hidden bg-[var(--color-parchment-warm)] shadow-sm"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={heroProducts[0].image!}
-                  alt={heroProducts[0].name}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                />
-              </Link>
-              {heroProducts.slice(1, 3).map((p) => (
-                <Link
-                  key={p.slug}
-                  href={`/products/${p.slug}`}
-                  className="focus-ring group overflow-hidden bg-[var(--color-parchment-warm)] shadow-sm aspect-square"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.image!}
-                    alt={p.name}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                  />
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="hidden md:flex relative aspect-[4/3] bg-[var(--color-parchment-warm)] items-center justify-center overflow-hidden">
-              <img src="/logo.png" alt="" className="relative w-1/2 h-1/2 object-contain opacity-80" />
-            </div>
-          )}
         </div>
       </section>
 
@@ -174,16 +115,16 @@ export default async function HomePage() {
       {banners && banners.length > 0 && (
         <>
           {banners.map((b) => (
-            <section key={b.id} className="mx-auto max-w-[1600px] px-4 py-8">
+            <section key={b.id} className="mx-auto max-w-[700px] px-4 py-6">
               {b.link_url ? (
                 <a href={b.link_url} className="focus-ring block rounded-xl overflow-hidden bg-[var(--color-parchment-warm)]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={b.image_url} alt={b.caption ?? ''} className="w-full h-auto max-h-[600px] object-contain" />
+                  <img src={b.image_url} alt={b.caption ?? ''} className="w-full h-auto max-h-[320px] object-contain mx-auto" />
                 </a>
               ) : (
                 <div className="rounded-xl overflow-hidden bg-[var(--color-parchment-warm)]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={b.image_url} alt={b.caption ?? ''} className="w-full h-auto max-h-[600px] object-contain" />
+                  <img src={b.image_url} alt={b.caption ?? ''} className="w-full h-auto max-h-[320px] object-contain mx-auto" />
                 </div>
               )}
               {b.caption && (
