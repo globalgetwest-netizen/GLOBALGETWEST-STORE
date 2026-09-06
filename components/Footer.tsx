@@ -53,6 +53,11 @@ export async function Footer() {
           <ul className="space-y-1">
             <li>About GLOBALGETWEST</li>
             <li>Sourcing &amp; quality</li>
+            <li>
+              <Link href="/health-information/hepatitis-awareness" className="hover:text-[var(--color-forest)] hover:underline">
+                Health Information
+              </Link>
+            </li>
           </ul>
         </div>
         {categories && categories.length > 0 && (
