@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
         price_usd_cents: v.price_usd_cents,
         compare_at_usd_cents: v.compare_at_usd_cents,
         is_active: v.is_active,
+        free_shipping: v.free_shipping ?? false,
         sort_order: i,
       })),
     );

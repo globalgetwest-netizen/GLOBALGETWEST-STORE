@@ -41,12 +41,14 @@ export async function PATCH(
       if (v.id) {
         await supabase.from('product_variants').update({
           sku: v.sku, name: v.name, price_usd_cents: v.price_usd_cents,
-          compare_at_usd_cents: v.compare_at_usd_cents, is_active: v.is_active, sort_order: i,
+          compare_at_usd_cents: v.compare_at_usd_cents, is_active: v.is_active,
+          free_shipping: v.free_shipping ?? false, sort_order: i,
         }).eq('id', v.id);
       } else {
         await supabase.from('product_variants').insert({
           product_id: id, sku: v.sku, name: v.name, price_usd_cents: v.price_usd_cents,
-          compare_at_usd_cents: v.compare_at_usd_cents, is_active: v.is_active, sort_order: i,
+          compare_at_usd_cents: v.compare_at_usd_cents, is_active: v.is_active,
+          free_shipping: v.free_shipping ?? false, sort_order: i,
         });
       }
     }

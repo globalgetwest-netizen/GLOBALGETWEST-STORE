@@ -18,7 +18,7 @@ export default async function EditProductPage({
       .select(`
         id, slug, name, short_description, description, category_id, origin_country,
         ingredients, usage_instructions, warnings, is_active, is_featured,
-        product_variants ( id, sku, name, price_usd_cents, compare_at_usd_cents, is_active ),
+        product_variants ( id, sku, name, price_usd_cents, compare_at_usd_cents, is_active, free_shipping ),
         product_images ( id, url, alt_text )
       `)
       .eq('id', id)
@@ -48,7 +48,7 @@ export default async function EditProductPage({
           variants: (product.product_variants ?? []).map((v: any) => ({
             id: v.id, sku: v.sku, name: v.name,
             price_usd_cents: v.price_usd_cents, compare_at_usd_cents: v.compare_at_usd_cents,
-            is_active: v.is_active,
+            is_active: v.is_active, free_shipping: v.free_shipping ?? false,
           })),
           images: (product.product_images ?? []).map((img: any) => ({
             id: img.id, url: img.url, alt_text: img.alt_text ?? '',

@@ -183,7 +183,7 @@ export function CheckoutFlow({ cart }: { cart: CartSummary }) {
                       {r.estimatedDays && <span className="text-[var(--color-ink-soft)]"> · {r.estimatedDays} days</span>}
                     </span>
                   </span>
-                  <span className="font-semibold">{formatUsd(r.amountUsdCents)}</span>
+                  <span className="font-semibold">{r.amountUsdCents === 0 ? 'Free' : formatUsd(r.amountUsdCents)}</span>
                 </label>
               ))}
             </div>
@@ -269,7 +269,7 @@ export function CheckoutFlow({ cart }: { cart: CartSummary }) {
         </div>
         <div className="flex justify-between mb-2">
           <span className="text-[var(--color-ink-soft)]">Shipping</span>
-          <span>{selectedRate ? formatUsd(selectedRate.amountUsdCents) : '—'}</span>
+          <span>{selectedRate ? (selectedRate.amountUsdCents === 0 ? 'Free' : formatUsd(selectedRate.amountUsdCents)) : '—'}</span>
         </div>
         <div className="flex justify-between font-semibold text-base border-t border-[var(--color-border)] pt-2 mt-2">
           <span>Total</span>

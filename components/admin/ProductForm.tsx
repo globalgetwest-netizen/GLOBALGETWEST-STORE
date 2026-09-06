@@ -11,6 +11,7 @@ interface VariantDraft {
   price_usd_cents: number;
   compare_at_usd_cents: number | null;
   is_active: boolean;
+  free_shipping: boolean;
 }
 
 interface ImageDraft {
@@ -52,7 +53,7 @@ export function ProductForm({
     category_id: categories[0]?.id ?? '', origin_country: '',
     ingredients: '', usage_instructions: '', warnings: '',
     is_active: true, is_featured: false,
-    variants: [{ sku: '', name: '', price_usd_cents: 0, compare_at_usd_cents: null, is_active: true }],
+    variants: [{ sku: '', name: '', price_usd_cents: 0, compare_at_usd_cents: null, is_active: true, free_shipping: false }],
     images: [{ url: '', alt_text: '' }],
   });
 
@@ -203,7 +204,7 @@ export function ProductForm({
           <h2 className="font-display text-lg">Variants (size / form)</h2>
           <button
             type="button"
-            onClick={() => setForm((f) => ({ ...f, variants: [...f.variants, { sku: '', name: '', price_usd_cents: 0, compare_at_usd_cents: null, is_active: true }] }))}
+            onClick={() => setForm((f) => ({ ...f, variants: [...f.variants, { sku: '', name: '', price_usd_cents: 0, compare_at_usd_cents: null, is_active: true, free_shipping: false }] }))}
             className="focus-ring text-sm text-[var(--color-forest)] hover:underline"
           >
             + Add variant
@@ -228,6 +229,14 @@ export function ProductForm({
             <label className="flex items-center gap-2 text-xs self-end pb-2">
               <input type="checkbox" checked={v.is_active} onChange={(e) => updateVariant(i, { is_active: e.target.checked })} />
               Active
+            </label>
+            <label className="flex items-center gap-2 text-xs self-end pb-2">
+              <input
+                type="checkbox"
+                checked={v.free_shipping}
+                onChange={(e) => updateVariant(i, { free_shipping: e.target.checked })}
+              />
+              Free shipping
             </label>
           </div>
         ))}

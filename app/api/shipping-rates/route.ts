@@ -3,7 +3,33 @@
 // so they can pick a carrier/service before paying.
 import { NextRequest, NextResponse } from 'next/server';
 import { easypostProvider } from '@/lib/shipping/easypost';
+import { supabaseServerClient } from '@/lib/supabase/server';
 import type { ShippingAddressInput, ShippingRateOption } from '@/lib/shipping/types';
+
+const FREE_SHIPPING_OPTION: ShippingRateOption = {
+  id: 'free-shipping',
+  carrier: 'Included',
+  service: 'Standard',
+  amountUsdCents: 0,
+  estimatedDays: 7,
+};
+
+// If ANY item in the customer's current cart has a variant marked
+// free_shipping (e.g. a "2-Month Full Package"), the whole order ships
+// free — a single flat per-order shipping charge doesn't split cleanly
+// per-item, so one qualifying item waives it for the order.
+async function cartHasFreeShippingItem(): Promise<boolean> {
+  const supabase = await supabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data } = await supabase
+    .from('cart_items')
+    .select('variant_id, product_variants!inner(free_shipping)')
+    .eq('profile_id', user.id);
+
+  return (data ?? []).some((item: any) => item.product_variants?.free_shipping === true);
+}
 
 const WAREHOUSE_ORIGIN: ShippingAddressInput = {
   fullName: 'GLOBALGETWEST Fulfilment',
@@ -52,6 +78,10 @@ export async function POST(req: NextRequest) {
 
   if (!destination?.countryCode) {
     return NextResponse.json({ error: 'Destination address required' }, { status: 400 });
+  }
+
+  if (await cartHasFreeShippingItem()) {
+    return NextResponse.json({ rates: [FREE_SHIPPING_OPTION], freeShipping: true });
   }
 
   if (!process.env.EASYPOST_API_KEY) {
