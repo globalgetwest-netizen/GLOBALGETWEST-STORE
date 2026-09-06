@@ -23,7 +23,9 @@ export default async function HomePage() {
 
   // Real products for the editorial "Discover" showcase — shown regardless
   // of the "Featured" flag, so the page always has real content instead of
-  // ever showing an empty admin-facing message to a customer.
+  // ever showing an empty admin-facing message to a customer. GGW Pumpkin
+  // Seed is deliberately excluded here at the owner's request — they'll add
+  // their own image to this spot via the /admin/homepage-banner tool.
   const { data: discoverRaw } = await supabase
     .from('products')
     .select(`
@@ -32,6 +34,7 @@ export default async function HomePage() {
       product_variants ( price_usd_cents )
     `)
     .eq('is_active', true)
+    .neq('slug', 'ggw-pumpkin-seed')
     .order('created_at', { ascending: false })
     .limit(3);
 
