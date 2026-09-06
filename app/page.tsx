@@ -108,31 +108,36 @@ export default async function HomePage() {
 
       {/* Homepage banners — admin-managed via /admin/homepage-banner, so any
           image the admin has real rights to can be added/swapped without a
-          code change. object-contain (not cover) so the FULL image always
-          shows uncropped, at its natural aspect ratio, instead of being
-          force-cropped into a fixed box. Supports any number of banners —
-          each renders as its own block. Hidden entirely when none exist. */}
+          code change. Now a proper grid (2-3 per row) instead of stacking
+          each image in its own full-width block, which read as a tall
+          "pole" of images rather than an organized gallery. object-contain
+          keeps each full image visible, uncropped, within its grid cell. */}
       {banners && banners.length > 0 && (
-        <>
-          {banners.map((b) => (
-            <section key={b.id} className="mx-auto max-w-[700px] px-4 py-6">
-              {b.link_url ? (
-                <a href={b.link_url} className="focus-ring block rounded-xl overflow-hidden bg-[var(--color-parchment-warm)]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={b.image_url} alt={b.caption ?? ''} className="w-full h-auto max-h-[320px] object-contain mx-auto" />
-                </a>
-              ) : (
-                <div className="rounded-xl overflow-hidden bg-[var(--color-parchment-warm)]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={b.image_url} alt={b.caption ?? ''} className="w-full h-auto max-h-[320px] object-contain mx-auto" />
-                </div>
-              )}
-              {b.caption && (
-                <p className="text-center text-sm text-[var(--color-ink-soft)] mt-3">{b.caption}</p>
-              )}
-            </section>
-          ))}
-        </>
+        <section className="mx-auto max-w-[1600px] px-4 py-10">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
+            {banners.map((b) => (
+              <div key={b.id}>
+                {b.link_url ? (
+                  <a
+                    href={b.link_url}
+                    className="focus-ring block aspect-square rounded-xl overflow-hidden bg-[var(--color-parchment-warm)] flex items-center justify-center"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={b.image_url} alt={b.caption ?? ''} className="w-full h-full object-contain" />
+                  </a>
+                ) : (
+                  <div className="aspect-square rounded-xl overflow-hidden bg-[var(--color-parchment-warm)] flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={b.image_url} alt={b.caption ?? ''} className="w-full h-full object-contain" />
+                  </div>
+                )}
+                {b.caption && (
+                  <p className="text-center text-sm text-[var(--color-ink-soft)] mt-2">{b.caption}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Shop by category — pulled live from the same categories table the
