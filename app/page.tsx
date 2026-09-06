@@ -15,7 +15,11 @@ export default async function HomePage() {
     .order('sort_order')
     .limit(6);
 
-  const { data: banner } = await supabase.from('homepage_banner').select('*').eq('id', 1).single();
+  const { data: banners } = await supabase
+    .from('homepage_banners')
+    .select('*')
+    .eq('is_active', true)
+    .order('sort_order');
 
   // Real product images for the hero composition — per explicit direction,
   // using actual stored product photos as-is, not a placeholder mark.
@@ -161,26 +165,33 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Homepage banner — admin-managed via /admin/homepage-banner, so any
+      {/* Homepage banners — admin-managed via /admin/homepage-banner, so any
           image the admin has real rights to can be added/swapped without a
-          code change. Hidden entirely when no image is set. */}
-      {banner?.image_url && (
-        <section className="mx-auto max-w-[1600px] px-4 py-10">
-          {banner.link_url ? (
-            <a href={banner.link_url} className="focus-ring block rounded-xl overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={banner.image_url} alt={banner.caption ?? ''} className="w-full max-h-[420px] object-cover" />
-            </a>
-          ) : (
-            <div className="rounded-xl overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={banner.image_url} alt={banner.caption ?? ''} className="w-full max-h-[420px] object-cover" />
-            </div>
-          )}
-          {banner.caption && (
-            <p className="text-center text-sm text-[var(--color-ink-soft)] mt-3">{banner.caption}</p>
-          )}
-        </section>
+          code change. object-contain (not cover) so the FULL image always
+          shows uncropped, at its natural aspect ratio, instead of being
+          force-cropped into a fixed box. Supports any number of banners —
+          each renders as its own block. Hidden entirely when none exist. */}
+      {banners && banners.length > 0 && (
+        <>
+          {banners.map((b) => (
+            <section key={b.id} className="mx-auto max-w-[1600px] px-4 py-8">
+              {b.link_url ? (
+                <a href={b.link_url} className="focus-ring block rounded-xl overflow-hidden bg-[var(--color-parchment-warm)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={b.image_url} alt={b.caption ?? ''} className="w-full h-auto max-h-[600px] object-contain" />
+                </a>
+              ) : (
+                <div className="rounded-xl overflow-hidden bg-[var(--color-parchment-warm)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={b.image_url} alt={b.caption ?? ''} className="w-full h-auto max-h-[600px] object-contain" />
+                </div>
+              )}
+              {b.caption && (
+                <p className="text-center text-sm text-[var(--color-ink-soft)] mt-3">{b.caption}</p>
+              )}
+            </section>
+          ))}
+        </>
       )}
 
       {/* Shop by category — pulled live from the same categories table the
