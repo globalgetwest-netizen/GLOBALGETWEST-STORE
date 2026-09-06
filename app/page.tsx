@@ -15,6 +15,8 @@ export default async function HomePage() {
     .order('sort_order')
     .limit(6);
 
+  const { data: banner } = await supabase.from('homepage_banner').select('*').eq('id', 1).single();
+
   // Real product images for the hero composition — per explicit direction,
   // using actual stored product photos as-is, not a placeholder mark.
   const { data: heroRaw } = await supabase
@@ -158,6 +160,28 @@ export default async function HomePage() {
           />
         </div>
       </section>
+
+      {/* Homepage banner — admin-managed via /admin/homepage-banner, so any
+          image the admin has real rights to can be added/swapped without a
+          code change. Hidden entirely when no image is set. */}
+      {banner?.image_url && (
+        <section className="mx-auto max-w-[1600px] px-4 py-10">
+          {banner.link_url ? (
+            <a href={banner.link_url} className="focus-ring block rounded-xl overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={banner.image_url} alt={banner.caption ?? ''} className="w-full max-h-[420px] object-cover" />
+            </a>
+          ) : (
+            <div className="rounded-xl overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={banner.image_url} alt={banner.caption ?? ''} className="w-full max-h-[420px] object-cover" />
+            </div>
+          )}
+          {banner.caption && (
+            <p className="text-center text-sm text-[var(--color-ink-soft)] mt-3">{banner.caption}</p>
+          )}
+        </section>
+      )}
 
       {/* Shop by category — pulled live from the same categories table the
           nav uses, so this section can never show a different list than
