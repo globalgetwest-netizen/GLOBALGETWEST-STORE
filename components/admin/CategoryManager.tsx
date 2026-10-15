@@ -98,7 +98,7 @@ export function CategoryManager({ initial }: { initial: Category[] }) {
   return (
     <div className="max-w-2xl">
       <p className="text-sm text-[var(--color-ink-soft)] mb-4">
-        The storefront's top navigation shows your active categories automatically, in the order below —
+        The storefront&apos;s top navigation shows your active categories automatically, in the order below —
         rename, reorder, or deactivate here and it updates there too.
       </p>
 

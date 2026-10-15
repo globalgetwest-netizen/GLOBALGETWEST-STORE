@@ -74,7 +74,7 @@ export function ImportForm({ categories }: { categories: Category[] }) {
       const data = await res.json();
       setResults(data.results ?? []);
       router.refresh();
-    } catch (err) {
+    } catch {
       setResults([{ row: 0, name: '', status: 'error', message: 'Import request failed' }]);
     } finally {
       setSubmitting(false);

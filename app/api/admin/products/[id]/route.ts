@@ -2,6 +2,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServerClient } from '@/lib/supabase/server';
 
+// Shapes the admin product form sends (see components/admin/ProductForm.tsx).
+interface VariantInput {
+  id?: string; sku: string; name: string; price_usd_cents: number;
+  compare_at_usd_cents: number | null; is_active: boolean; free_shipping?: boolean;
+}
+interface ImageInput { id?: string; url: string; alt_text?: string }
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -16,7 +23,7 @@ export async function PATCH(
     slug, name, short_description, description, category_id, origin_country,
     ingredients, usage_instructions, warnings, is_active, is_featured,
     variants, images,
-  } = body;
+  } = body as Record<string, unknown> & { variants?: VariantInput[]; images?: ImageInput[] };
 
   const { error: productError } = await supabase
     .from('products')
@@ -32,7 +39,7 @@ export async function PATCH(
   // Variants/images: upsert existing (by id), insert new (no id).
   // Simplest correct approach — replace the full set rather than diffing.
   if (variants) {
-    const existingIds = variants.filter((v: any) => v.id).map((v: any) => v.id);
+    const existingIds = variants.filter((v) => v.id).map((v) => v.id);
     await supabase.from('product_variants').delete().eq('product_id', id).not(
       'id', 'in', `(${existingIds.length ? existingIds.join(',') : '00000000-0000-0000-0000-000000000000'})`,
     );
@@ -55,8 +62,8 @@ export async function PATCH(
   }
 
   if (images) {
-    const validImages = images.filter((img: any) => img.url?.trim());
-    const existingIds = validImages.filter((img: any) => img.id).map((img: any) => img.id);
+    const validImages = images.filter((img) => img.url?.trim());
+    const existingIds = validImages.filter((img) => img.id).map((img) => img.id);
     await supabase.from('product_images').delete().eq('product_id', id).not(
       'id', 'in', `(${existingIds.length ? existingIds.join(',') : '00000000-0000-0000-0000-000000000000'})`,
     );

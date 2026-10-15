@@ -59,6 +59,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         throw new Error(data.error ?? 'Failed to add to cart');
       }
       setStatus('added');
+      router.refresh();
       setTimeout(() => setStatus('idle'), 2000);
     } catch {
       setStatus('error');
@@ -69,7 +70,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="group focus-ring block rounded-lg border border-[var(--color-border)] bg-white overflow-hidden transition-all hover:shadow-lg hover:-translate-y-0.5"
+      className="group focus-ring flex h-full flex-col rounded-lg border border-[var(--color-border)] bg-white overflow-hidden transition-all hover:shadow-lg hover:-translate-y-0.5"
     >
       <div className="relative aspect-square bg-[var(--color-parchment-warm)] overflow-hidden">
         {product.image_url ? (
@@ -91,7 +92,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         )}
       </div>
 
-      <div className="p-3.5">
+      <div className="flex flex-1 flex-col p-3.5">
         <p className="text-[10px] uppercase tracking-wider text-[var(--color-ochre)] font-semibold mb-1">
           GLOBALGETWEST
         </p>
@@ -111,9 +112,10 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           </div>
         )}
 
-        <div className="mt-2 mb-3">
+        <div className="mt-auto pt-2 mb-3">
+          <span className="text-[11px] uppercase tracking-wider text-[var(--color-ink-muted)] mr-1">From</span>
           <span className="font-semibold text-[17px] text-[var(--color-forest)]">
-            from {formatUsd(product.price_from_usd_cents)}
+            {formatUsd(product.price_from_usd_cents)}
           </span>
         </div>
 

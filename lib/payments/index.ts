@@ -34,6 +34,21 @@ export function resolveGatewayForCurrency(currency: string): PaymentGateway {
   return 'paystack';
 }
 
+// Secret key each gateway needs before it can take a payment. A gateway is
+// only offered at checkout once its key is set in the environment, so
+// shoppers never see a payment button that is guaranteed to fail.
+const REQUIRED_ENV: Record<PaymentGateway, string> = {
+  stripe: 'STRIPE_SECRET_KEY',
+  flutterwave: 'FLUTTERWAVE_SECRET_KEY',
+  grey: 'GREY_API_KEY',
+  paystack: 'PAYSTACK_SECRET_KEY',
+};
+
+/** Server-only: gateways whose credentials are configured in this deployment. */
+export function configuredGateways(): PaymentGateway[] {
+  return (Object.keys(REQUIRED_ENV) as PaymentGateway[]).filter((g) => !!process.env[REQUIRED_ENV[g]]);
+}
+
 export function listAvailableGateways(currency: string): PaymentGateway[] {
   const upper = currency.toUpperCase();
   return (Object.keys(providers) as PaymentGateway[]).filter((g) =>

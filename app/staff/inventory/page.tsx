@@ -16,7 +16,7 @@ export default async function StaffInventoryPage() {
 
   const stockByVariant = new Map((stockRows ?? []).map((s) => [s.variant_id, s.stock_on_hand]));
 
-  const rows = (variants ?? []).map((v: any) => ({
+  const rows = ((variants ?? []) as unknown as { id: string; sku: string; name: string; products: { name: string } | null }[]).map((v) => ({
     id: v.id,
     sku: v.sku,
     name: v.name,

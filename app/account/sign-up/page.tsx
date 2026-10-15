@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabaseBrowserClient } from '@/lib/supabase/client';
+import { readGuestCart, restoreGuestCart } from '@/lib/guestCart';
 
 export default function SignUpPage() {
   return (
@@ -30,6 +31,7 @@ function SignUpForm() {
     setError('');
 
     const supabase = supabaseBrowserClient();
+    const guestCart = await readGuestCart(supabase);
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -52,6 +54,7 @@ function SignUpForm() {
       return;
     }
 
+    await restoreGuestCart(guestCart);
     router.push(next);
     router.refresh();
   }
@@ -61,7 +64,7 @@ function SignUpForm() {
       <div className="mx-auto max-w-sm px-4 py-20 text-center">
         <h1 className="font-display text-2xl mb-3">Check your email</h1>
         <p className="text-[var(--color-ink-soft)] text-sm">
-          We've sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
+          We&apos;ve sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
         </p>
       </div>
     );

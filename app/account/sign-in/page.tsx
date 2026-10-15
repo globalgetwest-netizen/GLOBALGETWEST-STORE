@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabaseBrowserClient } from '@/lib/supabase/client';
+import { readGuestCart, restoreGuestCart } from '@/lib/guestCart';
 
 export default function SignInPage() {
   return (
@@ -28,6 +29,7 @@ function SignInForm() {
     setError('');
 
     const supabase = supabaseBrowserClient();
+    const guestCart = await readGuestCart(supabase);
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (signInError) {
@@ -36,6 +38,7 @@ function SignInForm() {
       return;
     }
 
+    await restoreGuestCart(guestCart);
     router.push(next);
     router.refresh();
   }
@@ -68,6 +71,15 @@ function SignInForm() {
           {loading ? 'Signing in…' : 'Sign In'}
         </button>
       </form>
+
+      {(next.startsWith('/checkout') || next.startsWith('/cart')) && (
+        <Link
+          href={next}
+          className="focus-ring mt-3 block w-full text-center border border-[var(--color-charcoal)] font-semibold px-5 py-2.5 rounded hover:bg-[var(--color-parchment-warm)]"
+        >
+          Continue as guest
+        </Link>
+      )}
 
       <p className="text-sm text-[var(--color-ink-soft)] mt-6 text-center">
         New here?{' '}

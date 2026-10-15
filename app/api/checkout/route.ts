@@ -6,7 +6,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServerClient, supabaseServiceRole } from '@/lib/supabase/server';
 import { generateOrderNumber, logOrderEvent } from '@/lib/orders';
-import { getProvider, resolveGatewayForCurrency, PaymentError } from '@/lib/payments';
+import { configuredGateways, getProvider, resolveGatewayForCurrency, PaymentError } from '@/lib/payments';
+import { quoteShippingForCart, findSelectedRate } from '@/lib/shipping/quote';
+import { asCartLines } from '@/lib/cartTypes';
 
 export async function POST(req: NextRequest) {
   const supabase = await supabaseServerClient();
@@ -19,20 +21,28 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const {
     shippingAddressId, billingAddressId, currency, gateway: requestedGateway,
-    shippingUsdCents, shippingCarrier, shippingService, shippingRateId,
+    shippingCarrier, shippingService, shippingRateId, email: guestEmail,
   } = body as {
     shippingAddressId: string;
     billingAddressId: string;
     currency: string;
     gateway?: 'stripe' | 'flutterwave' | 'grey' | 'paystack';
-    shippingUsdCents: number;
     shippingCarrier?: string;
     shippingService?: string;
     shippingRateId?: string;
+    email?: string;
   };
 
+  // Guests (no account) type their email at checkout; registered customers
+  // use the email on their account. Gateways need one for the receipt.
+  const isGuest = !!user.is_anonymous;
+  const customerEmail = isGuest ? guestEmail?.trim().toLowerCase() : user.email;
+  if (!customerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+    return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 });
+  }
+
   // 1. Load the customer's cart with variant + product data (RLS scopes this to the user)
-  const { data: cartItems, error: cartError } = await supabase
+  const { data: cartRows, error: cartError } = await supabase
     .from('cart_items')
     .select(`
       quantity,
@@ -46,16 +56,51 @@ export async function POST(req: NextRequest) {
   if (cartError) {
     return NextResponse.json({ error: cartError.message }, { status: 500 });
   }
-  if (!cartItems || cartItems.length === 0) {
+  const cartItems = asCartLines(cartRows);
+  if (cartItems.length === 0) {
     return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
   }
 
   // 2. Compute totals in USD cents (source of truth), then convert for display/charge currency
-  const subtotalUsdCents = cartItems.reduce((sum, item: any) => {
+  const subtotalUsdCents = cartItems.reduce((sum, item) => {
     return sum + item.product_variants.price_usd_cents * item.quantity;
   }, 0);
 
-  const shippingCents = shippingUsdCents ?? 0; // customer's chosen rate from /api/shipping-rates
+  // Re-price the customer's chosen shipping option server-side — any
+  // shipping amount in the request body is ignored. RLS scopes the address
+  // lookup to this user, so another customer's address id won't resolve.
+  const { data: shippingAddr } = await supabase
+    .from('addresses')
+    .select('full_name, phone, line1, line2, city, region, postal_code, country_code')
+    .eq('id', shippingAddressId)
+    .single();
+
+  if (!shippingAddr) {
+    return NextResponse.json({ error: 'Shipping address not found' }, { status: 400 });
+  }
+
+  const { rates } = await quoteShippingForCart(supabase, user.id, {
+    fullName: shippingAddr.full_name,
+    phone: shippingAddr.phone,
+    line1: shippingAddr.line1,
+    line2: shippingAddr.line2 ?? undefined,
+    city: shippingAddr.city,
+    region: shippingAddr.region ?? undefined,
+    postalCode: shippingAddr.postal_code ?? undefined,
+    countryCode: shippingAddr.country_code,
+  });
+  const shippingRate = findSelectedRate(rates, {
+    id: shippingRateId, carrier: shippingCarrier, service: shippingService,
+  });
+
+  if (!shippingRate) {
+    return NextResponse.json(
+      { error: 'That shipping option is no longer available — please go back and choose again' },
+      { status: 400 },
+    );
+  }
+
+  const shippingCents = shippingRate.amountUsdCents;
   const taxUsdCents = 0;      // TODO: wire up tax rules per region
   const totalUsdCents = subtotalUsdCents + shippingCents + taxUsdCents;
 
@@ -84,14 +129,6 @@ export async function POST(req: NextRequest) {
   //    would be ideal — kept as sequential inserts here for clarity.
   const orderNumber = generateOrderNumber();
 
-  // Denormalize shipping country onto the order for fast staff country-scoping
-  // (see migration 006) — avoids a join on every staff queue/order-list query.
-  const { data: shippingAddr } = await supabase
-    .from('addresses')
-    .select('country_code')
-    .eq('id', shippingAddressId)
-    .single();
-
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .insert({
@@ -105,10 +142,14 @@ export async function POST(req: NextRequest) {
       total_usd_cents: totalUsdCents,
       shipping_address_id: shippingAddressId,
       billing_address_id: billingAddressId,
-      shipping_carrier: shippingCarrier ?? null,
-      shipping_service: shippingService ?? null,
-      shipping_rate_id: shippingRateId ?? null,
-      shipping_country_code: shippingAddr?.country_code ?? null,
+      shipping_carrier: shippingRate.carrier,
+      shipping_service: shippingRate.service,
+      shipping_rate_id: shippingRate.id,
+      // Denormalized for fast staff country-scoping (see migration 006).
+      shipping_country_code: shippingAddr.country_code,
+      // Only set for guests, so registered checkout keeps working even
+      // before migration 014 has been run.
+      ...(isGuest ? { contact_email: customerEmail } : {}),
     })
     .select()
     .single();
@@ -117,7 +158,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: orderError?.message ?? 'Failed to create order' }, { status: 500 });
   }
 
-  const orderItemsPayload = cartItems.map((item: any) => ({
+  const orderItemsPayload = cartItems.map((item) => ({
     order_id: order.id,
     variant_id: item.product_variants.id,
     product_name_snapshot: item.product_variants.products.name,
@@ -132,7 +173,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: itemsError.message }, { status: 500 });
   }
 
-  await logOrderEvent(order.id, 'created', `Order placed via checkout, currency ${currency}`, user.id);
+  await logOrderEvent(
+    order.id, 'created',
+    `Order placed via ${isGuest ? 'guest ' : ''}checkout, currency ${currency}`, user.id,
+  );
+
+  // Give the guest's profile a name and phone so staff/admin screens show
+  // who ordered (profiles.email stays empty — it's unique per account).
+  if (isGuest) {
+    await svc.from('profiles')
+      .update({ full_name: shippingAddr.full_name, phone: shippingAddr.phone })
+      .eq('id', user.id);
+  }
 
   // 5. Create the hosted checkout session with the resolved (or requested) gateway
   const gateway = requestedGateway ?? resolveGatewayForCurrency(currency);
@@ -143,6 +195,12 @@ export async function POST(req: NextRequest) {
   // on this account — see supportedCurrencies() in lib/payments/paystack.ts).
   // The frontend already prevents this via GATEWAYS_BY_CURRENCY, but a
   // request could bypass that — this check is what actually stops it.
+  if (!configuredGateways().includes(gateway)) {
+    return NextResponse.json(
+      { error: "That payment method isn't available right now. Message us and we'll arrange payment." },
+      { status: 400 },
+    );
+  }
   if (!provider.supportedCurrencies().includes(currency.toUpperCase())) {
     return NextResponse.json(
       { error: `${gateway} does not support ${currency} on this account` },
@@ -156,8 +214,8 @@ export async function POST(req: NextRequest) {
       orderNumber: order.order_number,
       currency,
       amountMinorUnits,
-      customerEmail: user.email!,
-      customerName: user.user_metadata?.full_name ?? user.email!,
+      customerEmail,
+      customerName: user.user_metadata?.full_name ?? shippingAddr.full_name,
       successUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/orders/${order.id}/success`,
       cancelUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout?cancelled=1`,
     });

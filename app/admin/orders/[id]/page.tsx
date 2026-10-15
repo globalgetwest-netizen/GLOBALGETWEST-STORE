@@ -43,6 +43,7 @@ export default async function AdminOrderDetailPage({
       <h1 className="font-display text-3xl mb-1">{order.order_number}</h1>
       <p className="text-[var(--color-ink-soft)] text-sm mb-8">
         Placed {new Date(order.created_at).toLocaleString()} by {customer?.full_name ?? 'customer'}
+        {order.contact_email && <> · guest checkout · {order.contact_email}</>}
       </p>
 
       <div className="grid md:grid-cols-3 gap-8">

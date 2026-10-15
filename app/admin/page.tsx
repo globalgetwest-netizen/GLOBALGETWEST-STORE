@@ -2,10 +2,14 @@
 import { requireAdmin } from '@/lib/admin/guard';
 import { formatUsd } from '@/lib/catalog';
 
+function isoDaysAgo(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
 export default async function AdminDashboardPage() {
   const { supabase } = await requireAdmin();
 
-  const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const since30d = isoDaysAgo(30);
 
   const [
     { count: totalOrders },

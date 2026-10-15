@@ -1,51 +1,68 @@
 'use client';
 // components/CheckoutFlow.tsx
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { COUNTRIES, currencyForCountry, localCurrencyForCountry } from '@/lib/countries';
-import { formatUsd } from '@/lib/format';
+import { formatMoney, formatUsd } from '@/lib/format';
 import type { ShippingRateOption } from '@/lib/shipping/types';
-import { CONTACTS, contactForCountry } from '@/lib/contact';
+import { CONTACTS, SUPPORT_EMAIL, contactForCountry } from '@/lib/contact';
 import { ContactAgentButton } from '@/components/ContactAgentButton';
+
+export interface CheckoutLineItem {
+  id: string;
+  name: string;
+  variant: string;
+  quantity: number;
+  imageUrl: string | null;
+  lineTotalUsdCents: number;
+}
 
 interface CartSummary {
   subtotalUsdCents: number;
   totalWeightGrams: number;
+  items: CheckoutLineItem[];
 }
 
-const GATEWAYS_BY_CURRENCY: Record<string, { id: 'stripe' | 'flutterwave' | 'grey' | 'paystack'; label: string }[]> = {
-  // Grey powers this option on the backend, but the customer never needs
-  // to see that name — only the payment method itself (USDC/crypto)
-  // matters to them. Once a card gateway is approved for USD, add it
-  // alongside this, not instead of it.
-  USD: [{ id: 'grey', label: 'Pay with USDC (Crypto)' }],
-  GHS: [{ id: 'paystack', label: 'Card / Mobile Money (Paystack)' }],
-  NGN: [{ id: 'flutterwave', label: 'Card / Mobile Money (Flutterwave)' }],
+type GatewayId = 'stripe' | 'flutterwave' | 'grey' | 'paystack';
+
+// Customers see the payment method, never the processor's name. Each option
+// only appears once its gateway's key is configured (see configuredGateways
+// in lib/payments), so a gateway approved later shows up with no code change.
+const GATEWAYS_BY_CURRENCY: Record<string, { id: GatewayId; label: string; detail: string }[]> = {
+  USD: [
+    { id: 'stripe', label: 'Card, Apple Pay or Google Pay', detail: 'Visa, Mastercard and digital wallets' },
+    { id: 'flutterwave', label: 'Card', detail: 'Visa and Mastercard' },
+    { id: 'grey', label: 'USDC (crypto)', detail: 'Pay from a crypto wallet' },
+  ],
+  GHS: [{ id: 'paystack', label: 'Card or mobile money', detail: 'Visa, Mastercard, MTN MoMo, Telecel Cash, AirtelTigo Money' }],
+  NGN: [{ id: 'flutterwave', label: 'Card, bank transfer or USSD', detail: 'Visa, Mastercard and Nigerian banks' }],
 };
 
-export function CheckoutFlow({ cart }: { cart: CartSummary }) {
+export function CheckoutFlow({
+  cart, fxRates, isGuest = false, enabledGateways,
+}: { cart: CartSummary; fxRates: Record<string, number>; isGuest?: boolean; enabledGateways: GatewayId[] }) {
   const [step, setStep] = useState<'address' | 'shipping' | 'payment'>('address');
+  const [email, setEmail] = useState('');
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const [address, setAddress] = useState({
     fullName: '', phone: '', line1: '', line2: '',
     city: '', region: '', postalCode: '', countryCode: 'US',
   });
   const [rates, setRates] = useState<ShippingRateOption[] | null>(null);
   const [selectedRate, setSelectedRate] = useState<ShippingRateOption | null>(null);
-  const [gateway, setGateway] = useState<'stripe' | 'flutterwave' | 'grey' | 'paystack'>('paystack');
+  const [chosenGateway, setGateway] = useState<GatewayId | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const currency = currencyForCountry(address.countryCode);
-  const availableGateways = GATEWAYS_BY_CURRENCY[currency] ?? GATEWAYS_BY_CURRENCY.USD;
+  const availableGateways = (GATEWAYS_BY_CURRENCY[currency] ?? GATEWAYS_BY_CURRENCY.USD)
+    .filter((g) => enabledGateways.includes(g.id));
 
-  // Force the selected gateway to always be one that's actually valid for
-  // the current currency — without this, a stale selection from a previous
-  // country/currency could get silently submitted (e.g. 'paystack' still
-  // selected after switching to a USD address where only Grey is offered).
-  useEffect(() => {
-    if (!availableGateways.some((g) => g.id === gateway)) {
-      setGateway(availableGateways[0]?.id ?? 'grey');
-    }
-  }, [currency]);
+  // Always submit a gateway that's valid for the current currency — a stale
+  // choice from a previous country (e.g. Paystack after switching to a USD
+  // address) falls back to the first valid option instead.
+  const gateway = availableGateways.some((g) => g.id === chosenGateway)
+    ? chosenGateway
+    : availableGateways[0]?.id ?? null;
 
   async function fetchRates() {
     setLoading(true);
@@ -93,16 +110,16 @@ export function CheckoutFlow({ cart }: { cart: CartSummary }) {
           billingAddressId: addrData.id,
           currency,
           gateway,
-          shippingUsdCents: selectedRate.amountUsdCents,
           shippingCarrier: selectedRate.carrier,
           shippingService: selectedRate.service,
           shippingRateId: selectedRate.id,
+          ...(isGuest ? { email } : {}),
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Checkout failed');
 
-      window.location.href = data.redirectUrl;
+      window.location.assign(data.redirectUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setLoading(false);
@@ -110,27 +127,56 @@ export function CheckoutFlow({ cart }: { cart: CartSummary }) {
   }
 
   const total = cart.subtotalUsdCents + (selectedRate?.amountUsdCents ?? 0);
+  // What the gateway will actually charge — same conversion and rounding as
+  // /api/checkout, so a Ghana customer sees GH₵ on the button, not $.
+  const chargeTotal = currency === 'USD'
+    ? total
+    : fxRates[currency] ? Math.round(total * fxRates[currency]) : null;
+  const totalLabel = currency === 'USD' || chargeTotal === null
+    ? formatUsd(total)
+    : formatMoney(chargeTotal, currency);
+
+  const country = COUNTRIES.find((c) => c.code === address.countryCode)?.name ?? address.countryCode;
+  const contact = contactForCountry(address.countryCode);
+  const setField = (key: keyof typeof address) => (v: string) => {
+    setAddress({ ...address, [key]: v });
+    if (step !== 'address') { setStep('address'); setRates(null); setSelectedRate(null); }
+  };
 
   return (
-    <div className="grid md:grid-cols-3 gap-8">
-      <div className="md:col-span-2 space-y-6">
+    <div className="grid lg:grid-cols-[minmax(0,1fr)_400px] gap-10 items-start">
+      <div className="space-y-4">
         {/* Step 1: Contact + address */}
-        <section className="border border-[var(--color-border)] rounded-lg p-5 bg-white/60">
-          <h2 className="font-display text-lg mb-4">1. Contact &amp; Delivery Address</h2>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <Field label="Full name" value={address.fullName} onChange={(v) => setAddress({ ...address, fullName: v })} />
-            <Field label="Phone" value={address.phone} onChange={(v) => setAddress({ ...address, phone: v })} />
-            <Field label="Address line 1" value={address.line1} onChange={(v) => setAddress({ ...address, line1: v })} className="sm:col-span-2" />
-            <Field label="Address line 2 (optional)" value={address.line2} onChange={(v) => setAddress({ ...address, line2: v })} className="sm:col-span-2" required={false} />
-            <Field label="City" value={address.city} onChange={(v) => setAddress({ ...address, city: v })} />
-            <Field label="State / Region" value={address.region} onChange={(v) => setAddress({ ...address, region: v })} required={false} />
-            <Field label="Postal code" value={address.postalCode} onChange={(v) => setAddress({ ...address, postalCode: v })} required={false} />
+        <Section number={1} title="Contact and delivery" done={step !== 'address'} onEdit={() => setStep('address')}
+          summary={
+            <>
+              {isGuest && <>{email}<br /></>}
+              {address.fullName} · {address.phone}<br />
+              {address.line1}{address.line2 && `, ${address.line2}`}, {address.city}{address.region && `, ${address.region}`} {address.postalCode}<br />
+              {country}
+            </>
+          }
+        >
+          <div className="grid sm:grid-cols-2 gap-x-4 gap-y-3.5">
+            {isGuest && (
+              <Field label="Email" hint="For your receipt and delivery updates" type="email" autoComplete="email"
+                value={email} onChange={setEmail} className="sm:col-span-2" />
+            )}
+            <Field label="Full name" autoComplete="name" value={address.fullName} onChange={setField('fullName')} />
+            <Field label="Phone" type="tel" autoComplete="tel" value={address.phone} onChange={setField('phone')} />
+            <Field label="Address" autoComplete="address-line1" value={address.line1} onChange={setField('line1')} className="sm:col-span-2" />
+            <Field label="Apartment, suite, etc." optional autoComplete="address-line2" value={address.line2} onChange={setField('line2')} className="sm:col-span-2" />
+            <Field label="City" autoComplete="address-level2" value={address.city} onChange={setField('city')} />
+            <Field label="State / region" optional autoComplete="address-level1" value={address.region} onChange={setField('region')} />
+            <Field label="Postal code" optional autoComplete="postal-code" value={address.postalCode} onChange={setField('postalCode')} />
             <div>
-              <label className="block text-sm font-medium mb-1.5">Country</label>
+              <label htmlFor="checkout-country" className="block text-[13px] font-medium mb-1.5">Country</label>
               <select
+                id="checkout-country"
+                autoComplete="country"
                 value={address.countryCode}
-                onChange={(e) => { setAddress({ ...address, countryCode: e.target.value }); setStep('address'); setRates(null); }}
-                className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                onChange={(e) => setField('countryCode')(e.target.value)}
+                className="focus-ring w-full h-11 rounded-md border border-[var(--color-border)] bg-white px-3 text-sm"
               >
                 {COUNTRIES.map((c) => (
                   <option key={c.code} value={c.code}>{c.name}</option>
@@ -139,162 +185,238 @@ export function CheckoutFlow({ cart }: { cart: CartSummary }) {
             </div>
           </div>
 
-          {address.countryCode && localCurrencyForCountry(address.countryCode) !== currency && (
-            <p className="mt-3 text-xs text-[var(--color-ink-soft)] bg-[var(--color-parchment-warm)] rounded-md px-3 py-2">
-              Your local currency is {localCurrencyForCountry(address.countryCode)}, but this order will be
-              charged in {currency} — that's the currency our payment processor for your region actually
-              supports right now. Your card issuer will convert the {currency} amount at checkout.
+          {localCurrencyForCountry(address.countryCode) !== currency && (
+            <p className="mt-4 text-xs text-[var(--color-ink-soft)]">
+              Your order is charged in {currency}. Your bank converts it to{' '}
+              {localCurrencyForCountry(address.countryCode)} automatically.
             </p>
           )}
 
-          {step === 'address' && (
+          <button
+            onClick={fetchRates}
+            disabled={loading || !address.fullName || !address.phone || !address.line1 || !address.city || (isGuest && !emailValid)}
+            className="focus-ring mt-6 w-full sm:w-auto bg-[var(--color-charcoal)] text-white font-semibold px-7 py-3 rounded hover:bg-black transition-colors disabled:opacity-40"
+          >
+            {loading && step === 'address' ? 'Finding delivery options…' : 'Continue to delivery'}
+          </button>
+        </Section>
+
+        {/* Step 2: Delivery */}
+        <Section number={2} title="Delivery" locked={step === 'address'} done={step === 'payment'} onEdit={() => setStep('shipping')}
+          summary={selectedRate && (
+            <>
+              {selectedRate.carrier} · {selectedRate.service}
+              {selectedRate.estimatedDays && <> · about {selectedRate.estimatedDays} days</>}
+              {' · '}{selectedRate.amountUsdCents === 0 ? 'Free' : formatUsd(selectedRate.amountUsdCents)}
+            </>
+          )}
+        >
+          {rates && rates.length === 0 && (
+            <p className="text-sm text-[var(--color-ink-soft)]">
+              We couldn&apos;t calculate delivery to this address. Message us at the payment step and we&apos;ll arrange it.
+            </p>
+          )}
+          <div className="space-y-2.5">
+            {(rates ?? []).map((r) => (
+              <Choice key={r.id} name="shipping-rate" checked={selectedRate?.id === r.id} onChange={() => setSelectedRate(r)}
+                title={`${r.carrier} · ${r.service}`}
+                detail={r.estimatedDays ? `Arrives in about ${r.estimatedDays} days` : undefined}
+                aside={r.amountUsdCents === 0 ? 'Free' : formatUsd(r.amountUsdCents)}
+              />
+            ))}
+          </div>
+          {rates && rates.length > 0 && (
             <button
-              onClick={fetchRates}
-              disabled={loading || !address.fullName || !address.line1 || !address.city}
-              className="focus-ring mt-4 bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black disabled:opacity-50"
+              onClick={() => setStep('payment')}
+              className="focus-ring mt-6 w-full sm:w-auto bg-[var(--color-charcoal)] text-white font-semibold px-7 py-3 rounded hover:bg-black transition-colors"
             >
-              {loading ? 'Finding shipping options…' : 'Continue to Shipping'}
+              Continue to payment
             </button>
           )}
-        </section>
-
-        {/* Step 2: Shipping */}
-        {step !== 'address' && rates && (
-          <section className="border border-[var(--color-border)] rounded-lg p-5 bg-white/60">
-            <h2 className="font-display text-lg mb-4">2. Delivery Method</h2>
-            <div className="space-y-2">
-              {rates.length === 0 && <p className="text-sm text-[var(--color-ink-soft)]">No live rates returned — check EasyPost carrier setup.</p>}
-              {rates.map((r) => (
-                <label
-                  key={r.id}
-                  className={`flex items-center justify-between border rounded-md px-4 py-3 cursor-pointer text-sm ${
-                    selectedRate?.id === r.id ? 'border-[var(--color-forest)] bg-[var(--color-parchment-warm)]' : 'border-[var(--color-border)]'
-                  }`}
-                >
-                  <span className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="shipping-rate"
-                      checked={selectedRate?.id === r.id}
-                      onChange={() => setSelectedRate(r)}
-                    />
-                    <span>
-                      <span className="font-medium">{r.carrier} — {r.service}</span>
-                      {r.estimatedDays && <span className="text-[var(--color-ink-soft)]"> · {r.estimatedDays} days</span>}
-                    </span>
-                  </span>
-                  <span className="font-semibold">{r.amountUsdCents === 0 ? 'Free' : formatUsd(r.amountUsdCents)}</span>
-                </label>
-              ))}
-            </div>
-            {rates.length > 0 && (
-              <button
-                onClick={() => setStep('payment')}
-                className="focus-ring mt-4 bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black"
-              >
-                Continue to Payment
-              </button>
-            )}
-          </section>
-        )}
+        </Section>
 
         {/* Step 3: Payment */}
-        {step === 'payment' && (
-          <section className="border border-[var(--color-border)] rounded-lg p-5 bg-white/60">
-            <h2 className="font-display text-lg mb-4">3. Payment</h2>
-            {availableGateways.length === 0 ? (
-              <div className="rounded-md border border-[var(--color-ochre)]/40 bg-[var(--color-ochre)]/10 px-4 py-3 text-sm">
-                <p className="font-medium mb-1">Online payment isn't available for your region yet.</p>
-                <p className="text-[var(--color-ink-soft)]">
-                  We're setting up card payments for international orders. Please contact us at{' '}
-                  <a href="mailto:orders@globalgetwest.com" className="underline">orders@globalgetwest.com</a>{' '}
-                  to arrange payment for this order — your cart details are saved.
-                </p>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  {availableGateways.map((g) => (
-                    <label
-                      key={g.id}
-                      className={`flex items-center gap-3 border rounded-md px-4 py-3 cursor-pointer text-sm ${
-                        gateway === g.id ? 'border-[var(--color-forest)] bg-[var(--color-parchment-warm)]' : 'border-[var(--color-border)]'
-                      }`}
-                    >
-                      <input type="radio" name="gateway" checked={gateway === g.id} onChange={() => setGateway(g.id)} />
-                      {g.label}
-                    </label>
-                  ))}
-                </div>
-                <button
-                  onClick={submitOrder}
-                  disabled={loading}
-                  className="focus-ring mt-4 w-full bg-[var(--color-charcoal)] text-white font-semibold px-5 py-3 rounded hover:bg-black disabled:opacity-50"
-                >
-                  {loading ? 'Redirecting to payment…' : `Pay ${formatUsd(total)}`}
-                </button>
-              </>
-            )}
-
-            {/* Manual payment via WhatsApp — an ADDITION alongside the real
-                gateways above, not a replacement. Routes to the regional
-                contact based on the customer's country. The Asia/Africa
-                number is deliberately hidden until the customer clicks —
-                never in the page's initial HTML — since it reveals a Ghana
-                country code; the US/Europe number is fine to show directly. */}
-            <div className="mt-5 pt-5 border-t border-[var(--color-border)]">
-              <p className="text-sm text-[var(--color-ink-soft)] mb-2">
-                Prefer bank transfer or Western Union? Message us with your order details and we'll arrange it directly.
+        <Section number={3} title="Payment" locked={step !== 'payment'}>
+          {availableGateways.length === 0 ? (
+            <div className="rounded-md border border-[var(--color-ochre)]/40 bg-[var(--color-ochre)]/10 px-4 py-3.5 text-sm">
+              <p className="font-medium mb-1">Online payment for your country is coming soon</p>
+              <p className="text-[var(--color-ink-soft)]">
+                Message us below or email{' '}
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>{' '}
+                and we&apos;ll arrange payment by bank transfer. Your cart is saved.
               </p>
-              <ContactAgentButton
-                label={contactForCountry(address.countryCode).label}
-                phone={contactForCountry(address.countryCode).phone}
-                whatsappNumber={contactForCountry(address.countryCode).whatsapp}
-                message={`Hi, I'd like to arrange payment for an order.\n\nName: ${address.fullName}\nCountry: ${COUNTRIES.find((c) => c.code === address.countryCode)?.name ?? address.countryCode}\nOrder total: ${formatUsd(total)}\n\n(Please confirm the items with me.)`}
-                revealImmediately={contactForCountry(address.countryCode).label !== CONTACTS.africa.label}
-              />
             </div>
-          </section>
-        )}
+          ) : (
+            <>
+              <div className="space-y-2.5">
+                {availableGateways.map((g) => (
+                  <Choice key={g.id} name="gateway" checked={gateway === g.id} onChange={() => setGateway(g.id)}
+                    title={g.label} detail={g.detail} />
+                ))}
+              </div>
+              <button
+                onClick={submitOrder}
+                disabled={loading}
+                className="focus-ring mt-6 w-full bg-[var(--color-charcoal)] text-white font-semibold px-6 py-4 rounded hover:bg-black transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Taking you to secure payment…' : `Pay ${totalLabel}`}
+              </button>
+              <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-[var(--color-ink-soft)]">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+                You&apos;ll complete payment on a secure, encrypted page.
+              </p>
+            </>
+          )}
 
-        {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
+          {/* Manual payment via WhatsApp — an ADDITION alongside the real
+              gateways above, not a replacement. Routes to the regional
+              contact based on the customer's country. The Africa number is
+              deliberately hidden until the customer clicks — never in the
+              page's initial HTML; the US/Europe number is fine to show. */}
+          <div className="mt-6 pt-5 border-t border-[var(--color-border)]">
+            <p className="text-sm text-[var(--color-ink-soft)] mb-3">
+              Prefer bank transfer or Western Union? Message us and we&apos;ll arrange it directly.
+            </p>
+            <ContactAgentButton
+              label={contact.label}
+              phone={contact.phone}
+              whatsappNumber={contact.whatsapp}
+              message={`Hi, I'd like to arrange payment for an order.\n\nName: ${address.fullName}\nCountry: ${country}\nOrder total: ${totalLabel}\n\n(Please confirm the items with me.)`}
+              revealImmediately={contact.label !== CONTACTS.africa.label}
+            />
+          </div>
+        </Section>
+
+        {error && (
+          <p role="alert" className="rounded-md border border-[var(--color-danger)]/30 bg-[var(--color-danger)]/5 px-4 py-3 text-sm text-[var(--color-danger)]">
+            {error}
+          </p>
+        )}
       </div>
 
       {/* Order summary */}
-      <div className="border border-[var(--color-border)] rounded-lg p-5 h-fit bg-white/60 text-sm">
-        <h2 className="font-display text-lg mb-4">Order Summary</h2>
-        <div className="flex justify-between mb-2">
-          <span className="text-[var(--color-ink-soft)]">Subtotal</span>
-          <span>{formatUsd(cart.subtotalUsdCents)}</span>
+      <aside className="lg:sticky lg:top-32 rounded-lg border border-[var(--color-border)] bg-[var(--color-parchment-warm)] p-6 text-sm">
+        <h2 className="font-display text-xl mb-5">Order summary</h2>
+        <ul className="space-y-4 mb-5">
+          {cart.items.map((item) => (
+            <li key={item.id} className="flex items-center gap-3">
+              <div className="relative w-14 h-14 shrink-0 rounded-md bg-white border border-[var(--color-border)] overflow-hidden">
+                {item.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
+                )}
+                <span className="absolute -top-0 -right-0 min-w-5 h-5 px-1 inline-flex items-center justify-center rounded-bl-md bg-[var(--color-charcoal)] text-white text-[10px] font-semibold">
+                  {item.quantity}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{item.name}</p>
+                <p className="text-xs text-[var(--color-ink-soft)] truncate">{item.variant}</p>
+              </div>
+              <span className="whitespace-nowrap">{formatUsd(item.lineTotalUsdCents)}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="space-y-2 border-t border-[var(--color-border)] pt-4">
+          <div className="flex justify-between">
+            <span className="text-[var(--color-ink-soft)]">Subtotal</span>
+            <span>{formatUsd(cart.subtotalUsdCents)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[var(--color-ink-soft)]">Delivery</span>
+            <span className={selectedRate ? '' : 'text-[var(--color-ink-soft)]'}>
+              {selectedRate ? (selectedRate.amountUsdCents === 0 ? 'Free' : formatUsd(selectedRate.amountUsdCents)) : 'Next step'}
+            </span>
+          </div>
         </div>
-        <div className="flex justify-between mb-2">
-          <span className="text-[var(--color-ink-soft)]">Shipping</span>
-          <span>{selectedRate ? (selectedRate.amountUsdCents === 0 ? 'Free' : formatUsd(selectedRate.amountUsdCents)) : '—'}</span>
+        <div className="flex justify-between items-baseline border-t border-[var(--color-border)] mt-4 pt-4">
+          <span className="font-medium">Total</span>
+          <span className="font-display text-2xl">{currency === 'USD' || chargeTotal === null ? formatUsd(total) : formatMoney(chargeTotal, currency)}</span>
         </div>
-        <div className="flex justify-between font-semibold text-base border-t border-[var(--color-border)] pt-2 mt-2">
-          <span>Total</span>
-          <span>{formatUsd(total)}</span>
-        </div>
-      </div>
+        {currency !== 'USD' && chargeTotal !== null && (
+          <p className="mt-1 text-right text-xs text-[var(--color-ink-soft)]">≈ {formatUsd(total)}</p>
+        )}
+      </aside>
     </div>
   );
 }
 
-function Field({
-  label, value, onChange, className = '', required = true,
+function Section({
+  number, title, children, done = false, locked = false, onEdit, summary,
 }: {
-  label: string; value: string; onChange: (v: string) => void; className?: string; required?: boolean;
+  number: number; title: string; children: React.ReactNode;
+  done?: boolean; locked?: boolean; onEdit?: () => void; summary?: React.ReactNode;
 }) {
   return (
+    <section className={`rounded-lg border bg-white p-6 transition-colors ${locked ? 'border-[var(--color-border)]' : 'border-[var(--color-border)] shadow-[0_1px_2px_rgba(0,0,0,0.03)]'}`}>
+      <div className="flex items-center gap-3">
+        <span
+          className={`w-7 h-7 shrink-0 rounded-full inline-flex items-center justify-center text-xs font-semibold ${
+            done ? 'bg-[var(--color-forest)] text-white' : locked ? 'bg-[var(--color-parchment-warm)] text-[var(--color-ink-muted)] border border-[var(--color-border)]' : 'bg-[var(--color-charcoal)] text-white'
+          }`}
+          aria-hidden="true"
+        >
+          {done ? '✓' : number}
+        </span>
+        <h2 className={`font-display text-xl flex-1 ${locked ? 'text-[var(--color-ink-muted)]' : ''}`}>{title}</h2>
+        {done && onEdit && (
+          <button onClick={onEdit} className="focus-ring text-sm text-[var(--color-forest)] font-medium hover:underline">
+            Edit
+          </button>
+        )}
+      </div>
+      {done && summary && <p className="mt-3 ml-10 text-sm text-[var(--color-ink-soft)] leading-relaxed">{summary}</p>}
+      {!done && !locked && <div className="mt-5">{children}</div>}
+    </section>
+  );
+}
+
+function Choice({
+  name, checked, onChange, title, detail, aside,
+}: {
+  name: string; checked: boolean; onChange: () => void; title: string; detail?: string; aside?: string;
+}) {
+  return (
+    <label
+      className={`flex items-center gap-3.5 rounded-md border px-4 py-3.5 cursor-pointer text-sm transition-colors ${
+        checked ? 'border-[var(--color-charcoal)] bg-[var(--color-parchment-warm)]' : 'border-[var(--color-border)] hover:border-[var(--color-ink-muted)]'
+      }`}
+    >
+      <input type="radio" name={name} checked={checked} onChange={onChange} className="accent-[var(--color-charcoal)] w-4 h-4" />
+      <span className="flex-1">
+        <span className="block font-medium">{title}</span>
+        {detail && <span className="block text-xs text-[var(--color-ink-soft)] mt-0.5">{detail}</span>}
+      </span>
+      {aside && <span className="font-semibold">{aside}</span>}
+    </label>
+  );
+}
+
+function Field({
+  label, value, onChange, className = '', optional = false, type = 'text', autoComplete, hint,
+}: {
+  label: string; value: string; onChange: (v: string) => void; className?: string;
+  optional?: boolean; type?: string; autoComplete?: string; hint?: string;
+}) {
+  const id = `checkout-${label.toLowerCase().replace(/[^a-z]+/g, '-')}`;
+  return (
     <div className={className}>
-      <label className="block text-sm font-medium mb-1.5">{label}</label>
+      <label htmlFor={id} className="block text-[13px] font-medium mb-1.5">
+        {label}
+        {optional && <span className="font-normal text-[var(--color-ink-muted)]"> (optional)</span>}
+      </label>
       <input
-        type="text"
+        id={id}
+        type={type}
         value={value}
-        required={required}
+        required={!optional}
+        autoComplete={autoComplete}
         onChange={(e) => onChange(e.target.value)}
-        className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+        className="focus-ring w-full h-11 rounded-md border border-[var(--color-border)] bg-white px-3 text-sm transition-colors hover:border-[var(--color-ink-muted)]"
       />
+      {hint && <p className="mt-1 text-xs text-[var(--color-ink-muted)]">{hint}</p>}
     </div>
   );
 }

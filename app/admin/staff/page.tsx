@@ -15,7 +15,7 @@ export default async function AdminStaffPage() {
     <div>
       <h1 className="font-display text-3xl mb-2">Staff Accounts</h1>
       <p className="text-[var(--color-ink-soft)] text-sm mb-8">
-        There's no self-serve staff signup. To add staff: they sign up as a regular
+        There&apos;s no self-serve staff signup. To add staff: they sign up as a regular
         customer first (via the normal sign-up page), then you promote their account
         here by email.
       </p>

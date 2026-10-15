@@ -1,68 +1,96 @@
 // app/cart/page.tsx
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { supabaseServerClient } from '@/lib/supabase/server';
 import { formatUsd } from '@/lib/catalog';
 import { CartItemRow } from '@/components/CartItemRow';
+import { SecureCheckoutNote } from '@/components/SecureCheckoutNote';
+import { asCartLines } from '@/lib/cartTypes';
 
 export default async function CartPage() {
   const supabase = await supabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect('/account/sign-in?next=/cart');
-  }
-
-  const { data: items } = await supabase
+  // No session yet just means nothing has been added — show an empty cart
+  // instead of asking a visitor to sign in.
+  const { data: items } = user ? await supabase
     .from('cart_items')
     .select(`
       id, quantity,
       product_variants ( id, name, price_usd_cents, products ( name, slug, product_images ( url, sort_order ) ) )
     `)
-    .eq('profile_id', user!.id);
+    .eq('profile_id', user.id)
+    .order('created_at') : { data: [] };
 
-  const cartItems = items ?? [];
+  const cartItems = asCartLines(items);
+  const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cartItems.reduce(
-    (sum, item: any) => sum + item.product_variants.price_usd_cents * item.quantity,
+    (sum, item) => sum + item.product_variants.price_usd_cents * item.quantity,
     0,
   );
 
-  return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="font-display text-3xl mb-8">Your Cart</h1>
+  if (cartItems.length === 0) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-24 text-center">
+        <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--color-ochre)] font-semibold mb-3">Your cart</p>
+        <h1 className="font-display text-4xl mb-3">Nothing here yet</h1>
+        <p className="text-[var(--color-ink-soft)] mb-8">
+          Explore our botanical extracts and add your favourites. No account needed.
+        </p>
+        <Link
+          href="/products"
+          className="focus-ring inline-block bg-[var(--color-charcoal)] text-white font-semibold px-7 py-3 rounded hover:bg-black transition-colors"
+        >
+          Shop all products
+        </Link>
+      </div>
+    );
+  }
 
-      {cartItems.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-[var(--color-ink-soft)] mb-4">Your cart is empty.</p>
-          <Link href="/products" className="focus-ring text-[var(--color-forest)] font-medium hover:underline">
-            Continue shopping →
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-12">
+      <div className="flex items-baseline justify-between gap-4 mb-8">
+        <h1 className="font-display text-4xl">Your cart</h1>
+        <p className="text-sm text-[var(--color-ink-soft)]">
+          {itemCount} item{itemCount === 1 ? '' : 's'}
+        </p>
+      </div>
+
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_380px] gap-10 items-start">
+        <div className="border-t border-[var(--color-border)]">
+          {cartItems.map((item) => (
+            <CartItemRow key={item.id} item={item} />
+          ))}
+          <Link href="/products" className="focus-ring inline-block mt-6 text-sm text-[var(--color-forest)] font-medium hover:underline">
+            ← Continue shopping
           </Link>
         </div>
-      ) : (
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="md:col-span-2 space-y-4">
-            {cartItems.map((item: any) => (
-              <CartItemRow key={item.id} item={item} />
-            ))}
-          </div>
 
-          <div className="border border-[var(--color-border)] rounded-lg p-5 h-fit bg-white/60">
-            <div className="flex justify-between text-sm mb-2">
+        <aside className="lg:sticky lg:top-32 rounded-lg border border-[var(--color-border)] bg-[var(--color-parchment-warm)] p-6">
+          <h2 className="font-display text-xl mb-5">Order summary</h2>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
               <span className="text-[var(--color-ink-soft)]">Subtotal</span>
               <span className="font-medium">{formatUsd(subtotal)}</span>
             </div>
-            <p className="text-xs text-[var(--color-ink-soft)] mb-4">
-              Shipping and any applicable taxes calculated at checkout.
-            </p>
-            <Link
-              href="/checkout"
-              className="focus-ring block text-center bg-[var(--color-charcoal)] text-white font-semibold px-6 py-3 rounded hover:bg-black transition-colors"
-            >
-              Proceed to Checkout
-            </Link>
+            <div className="flex justify-between">
+              <span className="text-[var(--color-ink-soft)]">Delivery</span>
+              <span className="text-[var(--color-ink-soft)]">Calculated at checkout</span>
+            </div>
           </div>
-        </div>
-      )}
+          <div className="flex justify-between items-baseline border-t border-[var(--color-border)] mt-4 pt-4">
+            <span className="font-medium">Estimated total</span>
+            <span className="font-display text-2xl">{formatUsd(subtotal)}</span>
+          </div>
+          <Link
+            href="/checkout"
+            className="focus-ring mt-6 block text-center bg-[var(--color-charcoal)] text-white font-semibold px-6 py-3.5 rounded hover:bg-black transition-colors"
+          >
+            Checkout
+          </Link>
+          <p className="mt-3 text-center text-xs text-[var(--color-ink-soft)]">No account needed to check out.</p>
+          <SecureCheckoutNote />
+        </aside>
+      </div>
     </div>
   );
 }

@@ -58,7 +58,12 @@ export default async function StaffQueuePage() {
   );
 }
 
-function OrderTable({ orders, emptyLabel }: { orders: any[]; emptyLabel: string }) {
+interface QueueOrder {
+  id: string; order_number: string; status: string; total_usd_cents: number;
+  shipping_country_code: string | null; created_at: string;
+}
+
+function OrderTable({ orders, emptyLabel }: { orders: QueueOrder[]; emptyLabel: string }) {
   return (
     <div className="border border-[var(--color-border)] rounded-lg overflow-hidden bg-white/60">
       <table className="w-full text-sm">

@@ -18,7 +18,7 @@ const STATUS_LABELS: Record<string, string> = {
 export default async function OrderHistoryPage() {
   const supabase = await supabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/account/sign-in?next=/account/orders');
+  if (!user || user.is_anonymous) redirect('/account/sign-in?next=/account/orders');
 
   const { data: orders } = await supabase
     .from('orders')

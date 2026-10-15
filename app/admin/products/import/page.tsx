@@ -12,8 +12,8 @@ export default async function ProductImportPage() {
       <p className="text-[var(--color-ink-soft)] text-sm mb-8">
         Upload a CSV to add many products at once. Each row creates one
         product with one variant — add extra sizes/variants afterward from
-        each product's edit page. Photos still need to be uploaded per
-        product after import (a CSV can't carry image files).
+        each product&apos;s edit page. Photos still need to be uploaded per
+        product after import (a CSV can&apos;t carry image files).
       </p>
       <ImportForm categories={categories ?? []} />
     </div>

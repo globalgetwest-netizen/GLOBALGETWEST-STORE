@@ -4,7 +4,7 @@
 // of separately integrating each one. Sign up at easypost.com, verify the
 // carrier accounts you want live rates from (DHL Express and FedEx both
 // need their own account numbers linked inside EasyPost's dashboard).
-import type { ShippingProvider, ShippingAddressInput, ParcelInput, ShippingRateOption } from './types';
+import type { ShippingProvider, ShippingAddressInput, ShippingRateOption } from './types';
 
 const EASYPOST_BASE_URL = 'https://api.easypost.com/v2';
 
@@ -35,7 +35,9 @@ export const easypostProvider: ShippingProvider = {
     }
 
     const data = await res.json();
-    const rates = (data.rates ?? []) as any[];
+    const rates = (data.rates ?? []) as {
+      id: string; carrier: string; service: string; rate: string; delivery_days: number | null;
+    }[];
 
     return rates
       .map((r) => ({

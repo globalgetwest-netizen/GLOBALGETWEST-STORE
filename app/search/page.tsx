@@ -1,176 +1,45 @@
-import { supabase } from "@/lib/supabase"
-
-
+// app/search/page.tsx
+// Results for the header search box. Uses the same product cards and links
+// as /products — the previous version linked to /product/<id>, a route that
+// doesn't exist, so every search result opened a 404.
+import Link from 'next/link';
+import { getProductsByCategory, searchProducts } from '@/lib/catalog';
+import { ProductCard } from '@/components/ProductCard';
 
 export default async function SearchPage({
-
-searchParams
-
-}:{
-
-searchParams:{
-q?:string
-}
-
-}){
-
-
-const query = searchParams.q || ""
-
-
-
-const {data:products}=await supabase
-
-.from("products")
-
-.select(`
-
-*,
-
-categories(
-
-name
-
-)
-
-`)
-
-.ilike("name",`%${query}%`)
-
-
-
-
-
-
-
-return (
-
-<div className="min-h-screen bg-gray-100 p-10">
-
-
-<h1 className="text-4xl font-bold text-blue-900 mb-8">
-
-Search Results
-
-</h1>
-
-
-
-
-<p className="mb-6 text-gray-600">
-
-Results for:
-<b>{query}</b>
-
-</p>
-
-
-
-
-
-<div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6">
-
-
-
-
-
-{products?.map((product)=>(
-
-
-
-<a
-
-key={product.id}
-
-href={`/product/${product.id}`}
-
-className="bg-white rounded-2xl shadow overflow-hidden hover:shadow-xl"
-
->
-
-
-
-<img
-
-src={product.image || "/placeholder.png"}
-
-alt={product.name}
-
-className="w-full h-48 object-cover"
-
-/>
-
-
-
-
-
-<div className="p-5">
-
-
-
-<h2 className="text-xl font-bold text-blue-900">
-
-{product.name}
-
-</h2>
-
-
-
-
-
-<p className="text-sm text-blue-700 mt-2">
-
-{product.categories?.name}
-
-</p>
-
-
-
-
-
-<p className="text-2xl font-bold mt-3">
-
-${product.price}
-
-</p>
-
-
-
-
-</div>
-
-
-
-</a>
-
-
-
-))}
-
-
-
-</div>
-
-
-
-
-
-{products?.length===0 && (
-
-<p>
-
-No products found.
-
-</p>
-
-)}
-
-
-
-
-
-</div>
-
-)
-
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  const query = (q ?? '').trim();
+  const products = query ? await searchProducts(query) : await getProductsByCategory();
+
+  return (
+    <div className="mx-auto max-w-[1600px] px-4 py-10">
+      <h1 className="font-display text-3xl mb-1">
+        {query ? <>Results for &ldquo;{query}&rdquo;</> : 'All Products'}
+      </h1>
+      <p className="text-[var(--color-ink-soft)] text-sm mb-8">
+        {products.length} product{products.length === 1 ? '' : 's'}
+      </p>
+
+      {products.length === 0 ? (
+        <div className="py-12">
+          <p className="text-[var(--color-ink-soft)] mb-4">
+            Nothing matched &ldquo;{query}&rdquo;. Try a shorter word or browse everything.
+          </p>
+          <Link href="/products" className="focus-ring text-[var(--color-forest)] font-medium hover:underline">
+            Browse all products →
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {products.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
