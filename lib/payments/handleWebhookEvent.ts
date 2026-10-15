@@ -37,7 +37,7 @@ export async function handleWebhookEvent(event: VerifiedPaymentEvent) {
     if (paidCurrency !== payment.currency.toUpperCase() || event.amountMinorUnits < expectedAmount) {
       await supabase
         .from('payments')
-        .update({ status: 'failed', raw_webhook_payload: event.rawPayload as any })
+        .update({ status: 'failed', raw_webhook_payload: event.rawPayload })
         .eq('id', payment.id);
       await logOrderEvent(
         payment.order_id,
@@ -53,7 +53,7 @@ export async function handleWebhookEvent(event: VerifiedPaymentEvent) {
     .from('payments')
     .update({
       status: event.status,
-      raw_webhook_payload: event.rawPayload as any,
+      raw_webhook_payload: event.rawPayload,
     })
     .eq('id', payment.id);
 

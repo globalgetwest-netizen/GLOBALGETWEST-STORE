@@ -34,7 +34,7 @@ export default async function AdminProductsPage() {
             </tr>
           </thead>
           <tbody>
-            {(products ?? []).map((p: any) => (
+            {(products ?? []).map((p) => (
               <ProductRow key={p.id} product={p} />
             ))}
             {(!products || products.length === 0) && (

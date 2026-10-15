@@ -5,6 +5,12 @@ import { ProductCard } from '@/components/ProductCard';
 import { supabaseServerClient } from '@/lib/supabase/server';
 import { NewsletterSignup } from '@/components/NewsletterSignup';
 
+interface DiscoverRow {
+  id: string; slug: string; name: string; short_description: string | null;
+  product_images: { url: string; sort_order: number }[] | null;
+  product_variants: { price_usd_cents: number }[] | null;
+}
+
 export default async function HomePage() {
   const featured = await getFeaturedProducts(8);
   const supabase = await supabaseServerClient();
@@ -38,9 +44,9 @@ export default async function HomePage() {
     .order('created_at', { ascending: false })
     .limit(3);
 
-  const discover = (discoverRaw ?? []).map((p: any) => {
-    const images = (p.product_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order);
-    const prices = (p.product_variants ?? []).map((v: any) => v.price_usd_cents);
+  const discover = ((discoverRaw ?? []) as DiscoverRow[]).map((p) => {
+    const images = [...(p.product_images ?? [])].sort((a, b) => a.sort_order - b.sort_order);
+    const prices = (p.product_variants ?? []).map((v) => v.price_usd_cents);
     return {
       id: p.id,
       slug: p.slug,
@@ -259,7 +265,7 @@ export default async function HomePage() {
             <p className="uppercase tracking-[0.2em] text-[var(--color-ochre)] text-xs font-medium mb-3">
               Sourcing &amp; Quality
             </p>
-            <h2 className="font-display text-3xl mb-4">Know what you're buying.</h2>
+            <h2 className="font-display text-3xl mb-4">Know what you&apos;re buying.</h2>
             <p className="text-[var(--color-ink-soft)] mb-6 max-w-md">
               Transparency begins with understanding the product. We provide
               available information about ingredients, origin and preparation

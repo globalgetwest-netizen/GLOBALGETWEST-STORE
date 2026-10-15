@@ -2,6 +2,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServerClient } from '@/lib/supabase/server';
 
+// Shapes the admin product form sends (see components/admin/ProductForm.tsx).
+interface VariantInput {
+  id?: string; sku: string; name: string; price_usd_cents: number;
+  compare_at_usd_cents: number | null; is_active: boolean; free_shipping?: boolean;
+}
+interface ImageInput { id?: string; url: string; alt_text?: string }
+
 export async function POST(req: NextRequest) {
   // Uses the request-scoped client (not service role) so RLS's is_admin()
   // check is the real gate here, not just the requireAdmin() page guard.
@@ -14,7 +21,7 @@ export async function POST(req: NextRequest) {
     slug, name, short_description, description, category_id, origin_country,
     ingredients, usage_instructions, warnings, is_active, is_featured,
     variants, images,
-  } = body;
+  } = body as Record<string, unknown> & { variants?: VariantInput[]; images?: ImageInput[] };
 
   const { data: product, error: productError } = await supabase
     .from('products')
@@ -30,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   if (variants?.length) {
     const { error: variantError } = await supabase.from('product_variants').insert(
-      variants.map((v: any, i: number) => ({
+      variants.map((v, i) => ({
         product_id: product.id,
         sku: v.sku,
         name: v.name,
@@ -45,10 +52,10 @@ export async function POST(req: NextRequest) {
   }
 
   if (images?.length) {
-    const validImages = images.filter((img: any) => img.url?.trim());
+    const validImages = images.filter((img) => img.url?.trim());
     if (validImages.length) {
       const { error: imageError } = await supabase.from('product_images').insert(
-        validImages.map((img: any, i: number) => ({
+        validImages.map((img, i) => ({
           product_id: product.id,
           url: img.url,
           alt_text: img.alt_text,

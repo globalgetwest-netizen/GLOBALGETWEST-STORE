@@ -6,6 +6,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { easypostProvider } from './easypost';
 import type { ShippingAddressInput, ShippingRateOption } from './types';
+import { asCartLines } from '../cartTypes';
 
 const FREE_SHIPPING_OPTION: ShippingRateOption = {
   id: 'free-shipping',
@@ -70,16 +71,17 @@ export async function quoteShippingForCart(
   userId: string,
   destination: ShippingAddressInput,
 ): Promise<ShippingQuote> {
-  const { data: items } = await supabase
+  const { data } = await supabase
     .from('cart_items')
     .select('quantity, product_variants!inner(weight_grams, free_shipping)')
     .eq('profile_id', userId);
+  const items = asCartLines(data);
 
   // If ANY item in the customer's current cart has a variant marked
   // free_shipping (e.g. a "2-Month Full Package"), the whole order ships
   // free — a single flat per-order shipping charge doesn't split cleanly
   // per-item, so one qualifying item waives it for the order.
-  if ((items ?? []).some((item: any) => item.product_variants?.free_shipping === true)) {
+  if (items.some((item) => item.product_variants?.free_shipping === true)) {
     return { rates: [FREE_SHIPPING_OPTION], freeShipping: true };
   }
 
@@ -89,8 +91,8 @@ export async function quoteShippingForCart(
     return { rates: flatRateFallback(destination), fallback: true };
   }
 
-  const totalWeightGrams = (items ?? []).reduce(
-    (sum, item: any) => sum + (item.product_variants?.weight_grams ?? 100) * item.quantity,
+  const totalWeightGrams = items.reduce(
+    (sum, item) => sum + (item.product_variants?.weight_grams ?? 100) * item.quantity,
     0,
   );
 

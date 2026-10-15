@@ -5,6 +5,11 @@ import { getProductBySlug } from '@/lib/catalog';
 import { AddToCartForm } from '@/components/AddToCartForm';
 import { ProductGallery } from '@/components/ProductGallery';
 
+interface ReviewRow {
+  id: string; rating: number; title: string | null; body: string | null;
+  created_at: string; is_published: boolean;
+}
+
 export default async function ProductDetailPage({
   params,
 }: {
@@ -15,8 +20,9 @@ export default async function ProductDetailPage({
 
   if (!product) notFound();
 
-  const images = (product.product_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order);
-  const publishedReviews = (product.reviews ?? []).filter((r: any) => r.is_published);
+  const images = [...((product.product_images ?? []) as { id: string; url: string; alt_text: string | null; sort_order: number }[])]
+    .sort((a, b) => a.sort_order - b.sort_order);
+  const publishedReviews = ((product.reviews ?? []) as ReviewRow[]).filter((r) => r.is_published);
 
   return (
     <div className="mx-auto max-w-[1600px] px-4 py-6">
@@ -102,7 +108,7 @@ export default async function ProductDetailPage({
           <div className="mt-10 border-t border-[var(--color-border)] pt-6">
             <h2 className="font-display text-xl mb-4">Customer Reviews</h2>
             <div className="space-y-4">
-              {publishedReviews.map((r: any) => (
+              {publishedReviews.map((r) => (
                 <div key={r.id} className="border-b border-[var(--color-border)] pb-4">
                   <p className="text-sm font-medium">★ {r.rating} {r.title && `— ${r.title}`}</p>
                   {r.body && <p className="text-sm text-[var(--color-ink-soft)] mt-1">{r.body}</p>}

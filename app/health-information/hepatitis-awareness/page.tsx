@@ -30,7 +30,7 @@ export default function HepatitisAwarenessPage() {
         Why it can go unnoticed
       </h2>
       <p className="text-[var(--color-ink-soft)] mb-6 leading-relaxed">
-        Chronic viral hepatitis is often described as "silent" — it can
+        Chronic viral hepatitis is often described as &ldquo;silent&rdquo; — it can
         cause no noticeable symptoms for years while gradually affecting
         liver function. This is exactly why routine testing matters: by the
         time symptoms appear, the liver may already have sustained

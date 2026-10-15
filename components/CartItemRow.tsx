@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatUsd } from '@/lib/format';
+import type { CartLine } from '@/lib/cartTypes';
 
-export function CartItemRow({ item }: { item: any }) {
+export function CartItemRow({ item }: { item: CartLine }) {
   const [quantity, setQuantity] = useState(item.quantity);
   const [pending, setPending] = useState(false);
   const router = useRouter();
   const product = item.product_variants.products;
-  const image = (product.product_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order)[0];
+  const image = [...(product.product_images ?? [])].sort((a, b) => a.sort_order - b.sort_order)[0];
 
   async function updateQuantity(next: number) {
     setPending(true);

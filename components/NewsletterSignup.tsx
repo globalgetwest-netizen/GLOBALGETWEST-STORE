@@ -29,7 +29,7 @@ export function NewsletterSignup() {
   if (status === 'success') {
     return (
       <p className="text-sm text-[var(--color-ink)]">
-        Thanks — you're on the list.
+        Thanks — you&apos;re on the list.
       </p>
     );
   }

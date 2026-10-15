@@ -1,10 +1,10 @@
 'use client';
 // components/CheckoutFlow.tsx
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { COUNTRIES, currencyForCountry, localCurrencyForCountry } from '@/lib/countries';
 import { formatMoney, formatUsd } from '@/lib/format';
 import type { ShippingRateOption } from '@/lib/shipping/types';
-import { CONTACTS, contactForCountry } from '@/lib/contact';
+import { CONTACTS, SUPPORT_EMAIL, contactForCountry } from '@/lib/contact';
 import { ContactAgentButton } from '@/components/ContactAgentButton';
 
 interface CartSummary {
@@ -12,19 +12,24 @@ interface CartSummary {
   totalWeightGrams: number;
 }
 
-const GATEWAYS_BY_CURRENCY: Record<string, { id: 'stripe' | 'flutterwave' | 'grey' | 'paystack'; label: string }[]> = {
-  // Grey powers this option on the backend, but the customer never needs
-  // to see that name — only the payment method itself (USDC/crypto)
-  // matters to them. Once a card gateway is approved for USD, add it
-  // alongside this, not instead of it.
-  USD: [{ id: 'grey', label: 'Pay with USDC (Crypto)' }],
-  GHS: [{ id: 'paystack', label: 'Card / Mobile Money (Paystack)' }],
-  NGN: [{ id: 'flutterwave', label: 'Card / Mobile Money (Flutterwave)' }],
+type GatewayId = 'stripe' | 'flutterwave' | 'grey' | 'paystack';
+
+// Customers see the payment method, never the processor's name. Each option
+// only appears once its gateway's key is configured (see configuredGateways
+// in lib/payments), so a gateway approved later shows up with no code change.
+const GATEWAYS_BY_CURRENCY: Record<string, { id: GatewayId; label: string; detail: string }[]> = {
+  USD: [
+    { id: 'stripe', label: 'Card, Apple Pay or Google Pay', detail: 'Visa, Mastercard and digital wallets' },
+    { id: 'flutterwave', label: 'Card', detail: 'Visa and Mastercard' },
+    { id: 'grey', label: 'USDC (crypto)', detail: 'Pay from a crypto wallet' },
+  ],
+  GHS: [{ id: 'paystack', label: 'Card or mobile money', detail: 'Visa, Mastercard, MTN MoMo, Telecel Cash, AirtelTigo Money' }],
+  NGN: [{ id: 'flutterwave', label: 'Card, bank transfer or USSD', detail: 'Visa, Mastercard and Nigerian banks' }],
 };
 
 export function CheckoutFlow({
-  cart, fxRates, isGuest = false,
-}: { cart: CartSummary; fxRates: Record<string, number>; isGuest?: boolean }) {
+  cart, fxRates, isGuest = false, enabledGateways,
+}: { cart: CartSummary; fxRates: Record<string, number>; isGuest?: boolean; enabledGateways: GatewayId[] }) {
   const [step, setStep] = useState<'address' | 'shipping' | 'payment'>('address');
   const [email, setEmail] = useState('');
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -34,22 +39,20 @@ export function CheckoutFlow({
   });
   const [rates, setRates] = useState<ShippingRateOption[] | null>(null);
   const [selectedRate, setSelectedRate] = useState<ShippingRateOption | null>(null);
-  const [gateway, setGateway] = useState<'stripe' | 'flutterwave' | 'grey' | 'paystack'>('paystack');
+  const [chosenGateway, setGateway] = useState<GatewayId | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const currency = currencyForCountry(address.countryCode);
-  const availableGateways = GATEWAYS_BY_CURRENCY[currency] ?? GATEWAYS_BY_CURRENCY.USD;
+  const availableGateways = (GATEWAYS_BY_CURRENCY[currency] ?? GATEWAYS_BY_CURRENCY.USD)
+    .filter((g) => enabledGateways.includes(g.id));
 
-  // Force the selected gateway to always be one that's actually valid for
-  // the current currency — without this, a stale selection from a previous
-  // country/currency could get silently submitted (e.g. 'paystack' still
-  // selected after switching to a USD address where only Grey is offered).
-  useEffect(() => {
-    if (!availableGateways.some((g) => g.id === gateway)) {
-      setGateway(availableGateways[0]?.id ?? 'grey');
-    }
-  }, [currency]);
+  // Always submit a gateway that's valid for the current currency — a stale
+  // choice from a previous country (e.g. Paystack after switching to a USD
+  // address) falls back to the first valid option instead.
+  const gateway = availableGateways.some((g) => g.id === chosenGateway)
+    ? chosenGateway
+    : availableGateways[0]?.id ?? null;
 
   async function fetchRates() {
     setLoading(true);
@@ -106,7 +109,7 @@ export function CheckoutFlow({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Checkout failed');
 
-      window.location.href = data.redirectUrl;
+      window.location.assign(data.redirectUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
       setLoading(false);
@@ -156,9 +159,8 @@ export function CheckoutFlow({
 
           {address.countryCode && localCurrencyForCountry(address.countryCode) !== currency && (
             <p className="mt-3 text-xs text-[var(--color-ink-soft)] bg-[var(--color-parchment-warm)] rounded-md px-3 py-2">
-              Your local currency is {localCurrencyForCountry(address.countryCode)}, but this order will be
-              charged in {currency} — that's the currency our payment processor for your region actually
-              supports right now. Your card issuer will convert the {currency} amount at checkout.
+              Your order is charged in {currency}. Your bank converts it to{' '}
+              {localCurrencyForCountry(address.countryCode)} automatically.
             </p>
           )}
 
@@ -178,7 +180,11 @@ export function CheckoutFlow({
           <section className="border border-[var(--color-border)] rounded-lg p-5 bg-white/60">
             <h2 className="font-display text-lg mb-4">2. Delivery Method</h2>
             <div className="space-y-2">
-              {rates.length === 0 && <p className="text-sm text-[var(--color-ink-soft)]">No live rates returned — check EasyPost carrier setup.</p>}
+              {rates.length === 0 && (
+                <p className="text-sm text-[var(--color-ink-soft)]">
+                  We couldn&apos;t calculate delivery to this address. Message us below and we&apos;ll arrange it.
+                </p>
+              )}
               {rates.map((r) => (
                 <label
                   key={r.id}
@@ -219,11 +225,11 @@ export function CheckoutFlow({
             <h2 className="font-display text-lg mb-4">3. Payment</h2>
             {availableGateways.length === 0 ? (
               <div className="rounded-md border border-[var(--color-ochre)]/40 bg-[var(--color-ochre)]/10 px-4 py-3 text-sm">
-                <p className="font-medium mb-1">Online payment isn't available for your region yet.</p>
+                <p className="font-medium mb-1">Online payment for your country is coming soon</p>
                 <p className="text-[var(--color-ink-soft)]">
-                  We're setting up card payments for international orders. Please contact us at{' '}
-                  <a href="mailto:orders@globalgetwest.com" className="underline">orders@globalgetwest.com</a>{' '}
-                  to arrange payment for this order — your cart details are saved.
+                  Message us below or email{' '}
+                  <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>{' '}
+                  and we&apos;ll arrange payment by bank transfer. Your cart is saved.
                 </p>
               </div>
             ) : (
@@ -237,7 +243,10 @@ export function CheckoutFlow({
                       }`}
                     >
                       <input type="radio" name="gateway" checked={gateway === g.id} onChange={() => setGateway(g.id)} />
-                      {g.label}
+                      <span>
+                        <span className="block font-medium">{g.label}</span>
+                        <span className="block text-xs text-[var(--color-ink-soft)]">{g.detail}</span>
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -259,7 +268,7 @@ export function CheckoutFlow({
                 country code; the US/Europe number is fine to show directly. */}
             <div className="mt-5 pt-5 border-t border-[var(--color-border)]">
               <p className="text-sm text-[var(--color-ink-soft)] mb-2">
-                Prefer bank transfer or Western Union? Message us with your order details and we'll arrange it directly.
+                Prefer bank transfer or Western Union? Message us with your order details and we&apos;ll arrange it directly.
               </p>
               <ContactAgentButton
                 label={contactForCountry(address.countryCode).label}

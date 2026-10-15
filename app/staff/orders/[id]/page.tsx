@@ -1,7 +1,6 @@
 // app/staff/orders/[id]/page.tsx
 import { notFound } from 'next/navigation';
 import { requireStaff } from '@/lib/staff/guard';
-import { formatUsd } from '@/lib/catalog';
 import { StaffOrderPanel } from '@/components/staff/StaffOrderPanel';
 
 export default async function StaffOrderDetailPage({

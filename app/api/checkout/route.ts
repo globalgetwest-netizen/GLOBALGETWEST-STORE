@@ -6,8 +6,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServerClient, supabaseServiceRole } from '@/lib/supabase/server';
 import { generateOrderNumber, logOrderEvent } from '@/lib/orders';
-import { getProvider, resolveGatewayForCurrency, PaymentError } from '@/lib/payments';
+import { configuredGateways, getProvider, resolveGatewayForCurrency, PaymentError } from '@/lib/payments';
 import { quoteShippingForCart, findSelectedRate } from '@/lib/shipping/quote';
+import { asCartLines } from '@/lib/cartTypes';
 
 export async function POST(req: NextRequest) {
   const supabase = await supabaseServerClient();
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 1. Load the customer's cart with variant + product data (RLS scopes this to the user)
-  const { data: cartItems, error: cartError } = await supabase
+  const { data: cartRows, error: cartError } = await supabase
     .from('cart_items')
     .select(`
       quantity,
@@ -55,12 +56,13 @@ export async function POST(req: NextRequest) {
   if (cartError) {
     return NextResponse.json({ error: cartError.message }, { status: 500 });
   }
-  if (!cartItems || cartItems.length === 0) {
+  const cartItems = asCartLines(cartRows);
+  if (cartItems.length === 0) {
     return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
   }
 
   // 2. Compute totals in USD cents (source of truth), then convert for display/charge currency
-  const subtotalUsdCents = cartItems.reduce((sum, item: any) => {
+  const subtotalUsdCents = cartItems.reduce((sum, item) => {
     return sum + item.product_variants.price_usd_cents * item.quantity;
   }, 0);
 
@@ -156,7 +158,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: orderError?.message ?? 'Failed to create order' }, { status: 500 });
   }
 
-  const orderItemsPayload = cartItems.map((item: any) => ({
+  const orderItemsPayload = cartItems.map((item) => ({
     order_id: order.id,
     variant_id: item.product_variants.id,
     product_name_snapshot: item.product_variants.products.name,
@@ -193,6 +195,12 @@ export async function POST(req: NextRequest) {
   // on this account — see supportedCurrencies() in lib/payments/paystack.ts).
   // The frontend already prevents this via GATEWAYS_BY_CURRENCY, but a
   // request could bypass that — this check is what actually stops it.
+  if (!configuredGateways().includes(gateway)) {
+    return NextResponse.json(
+      { error: "That payment method isn't available right now. Message us and we'll arrange payment." },
+      { status: 400 },
+    );
+  }
   if (!provider.supportedCurrencies().includes(currency.toUpperCase())) {
     return NextResponse.json(
       { error: `${gateway} does not support ${currency} on this account` },

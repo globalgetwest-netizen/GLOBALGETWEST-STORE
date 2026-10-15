@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { supabaseServerClient } from '@/lib/supabase/server';
-import { formatUsd } from '@/lib/catalog';
+import { formatMoney, formatUsd } from '@/lib/format';
 import { SaveGuestDetails } from '@/components/SaveGuestDetails';
 
 export default async function OrderSuccessPage({
@@ -24,6 +24,19 @@ export default async function OrderSuccessPage({
 
   if (!order) notFound();
 
+  // Show what the customer was actually charged (e.g. GH₵ for Ghana), not
+  // just the USD reference total.
+  const { data: payment } = await supabase
+    .from('payments')
+    .select('currency, amount_minor_units')
+    .eq('order_id', id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const amountLabel = payment && payment.currency !== 'USD'
+    ? formatMoney(Number(payment.amount_minor_units), payment.currency)
+    : formatUsd(order.total_usd_cents);
+
   // Only these statuses mean money was actually received — 'cancelled' and
   // 'refunded' must not show a thank-you as if the order went through.
   const paid = ['paid', 'processing', 'fulfilled', 'shipped', 'delivered'].includes(order.status);
@@ -39,7 +52,7 @@ export default async function OrderSuccessPage({
             : 'Order received — awaiting payment confirmation'}
       </h1>
       <p className="text-[var(--color-ink-soft)] mb-8">
-        Order <strong>{order.order_number}</strong> — {formatUsd(order.total_usd_cents)}
+        Order <strong>{order.order_number}</strong> — {amountLabel}
         {order.shipping_carrier && (
           <> · shipping via {order.shipping_carrier} {order.shipping_service}</>
         )}

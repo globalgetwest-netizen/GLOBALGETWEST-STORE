@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { supabaseServerClient } from '@/lib/supabase/server';
 import { formatUsd } from '@/lib/catalog';
 import { CartItemRow } from '@/components/CartItemRow';
+import { asCartLines } from '@/lib/cartTypes';
 
 export default async function CartPage() {
   const supabase = await supabaseServerClient();
@@ -18,9 +19,9 @@ export default async function CartPage() {
     `)
     .eq('profile_id', user.id) : { data: [] };
 
-  const cartItems = items ?? [];
+  const cartItems = asCartLines(items);
   const subtotal = cartItems.reduce(
-    (sum, item: any) => sum + item.product_variants.price_usd_cents * item.quantity,
+    (sum, item) => sum + item.product_variants.price_usd_cents * item.quantity,
     0,
   );
 
@@ -38,7 +39,7 @@ export default async function CartPage() {
       ) : (
         <div className="grid md:grid-cols-3 gap-8">
           <div className="md:col-span-2 space-y-4">
-            {cartItems.map((item: any) => (
+            {cartItems.map((item) => (
               <CartItemRow key={item.id} item={item} />
             ))}
           </div>

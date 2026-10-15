@@ -2,25 +2,28 @@
 import { redirect } from 'next/navigation';
 import { supabaseServerClient } from '@/lib/supabase/server';
 import { CheckoutFlow } from '@/components/CheckoutFlow';
+import { configuredGateways } from '@/lib/payments';
+import { asCartLines } from '@/lib/cartTypes';
 
 export default async function CheckoutPage() {
   const supabase = await supabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/cart');
 
-  const { data: items } = await supabase
+  const { data } = await supabase
     .from('cart_items')
     .select('quantity, product_variants ( price_usd_cents, weight_grams )')
     .eq('profile_id', user.id);
+  const items = asCartLines(data);
 
-  if (!items || items.length === 0) redirect('/cart');
+  if (items.length === 0) redirect('/cart');
 
   const subtotalUsdCents = items.reduce(
-    (sum, item: any) => sum + item.product_variants.price_usd_cents * item.quantity,
+    (sum, item) => sum + item.product_variants.price_usd_cents * item.quantity,
     0,
   );
   const totalWeightGrams = items.reduce(
-    (sum, item: any) => sum + (item.product_variants.weight_grams ?? 100) * item.quantity,
+    (sum, item) => sum + (item.product_variants.weight_grams ?? 100) * item.quantity,
     0,
   );
 
@@ -50,7 +53,7 @@ export default async function CheckoutPage() {
           </a>
         </p>
       ) : <div className="mb-6" />}
-      <CheckoutFlow cart={{ subtotalUsdCents, totalWeightGrams }} fxRates={fxRates} isGuest={!!user.is_anonymous} />
+      <CheckoutFlow cart={{ subtotalUsdCents, totalWeightGrams }} fxRates={fxRates} isGuest={!!user.is_anonymous} enabledGateways={configuredGateways()} />
     </div>
   );
 }

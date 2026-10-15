@@ -69,8 +69,22 @@ export async function searchProducts(term: string): Promise<ProductCardData[]> {
     .eq('is_active', true)
     .textSearch('search_tsv', term, { type: 'websearch' });
 
-  if (error || !data) return [];
-  return data.map(mapToCard);
+  if (!error && data && data.length > 0) return data.map(mapToCard);
+
+  // Full-text search only matches whole words ("liver", not "liv"), so fall
+  // back to a partial name match before telling the shopper nothing matched.
+  const pattern = `%${term.replace(/[%_\\]/g, (c) => `\\${c}`)}%`;
+  const { data: partial } = await supabase
+    .from('products')
+    .select(`
+      id, slug, name, short_description, origin_country, avg_rating, review_count,
+      product_images ( url, sort_order ),
+      product_variants ( id, price_usd_cents )
+    `)
+    .eq('is_active', true)
+    .ilike('name', pattern);
+
+  return (partial ?? []).map(mapToCard);
 }
 
 export async function getProductBySlug(slug: string) {
@@ -100,12 +114,26 @@ export async function getProductBySlug(slug: string) {
   return data;
 }
 
-function mapToCard(row: any): ProductCardData {
-  const images = (row.product_images ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order);
+// Shape of the product rows selected by the listing queries above.
+interface CatalogRow {
+  id: string;
+  slug: string;
+  name: string;
+  short_description: string | null;
+  origin_country: string | null;
+  avg_rating: number | null;
+  review_count: number | null;
+  product_images: { url: string; sort_order: number }[] | null;
+  product_variants: { id: string; price_usd_cents: number }[] | null;
+}
+
+function mapToCard(input: unknown): ProductCardData {
+  const row = input as CatalogRow;
+  const images = [...(row.product_images ?? [])].sort((a, b) => a.sort_order - b.sort_order);
   const variants = row.product_variants ?? [];
-  const prices = variants.map((v: any) => v.price_usd_cents);
+  const prices = variants.map((v) => v.price_usd_cents);
   const cheapest = variants.length
-    ? variants.reduce((min: any, v: any) => (v.price_usd_cents < min.price_usd_cents ? v : min), variants[0])
+    ? variants.reduce((min, v) => (v.price_usd_cents < min.price_usd_cents ? v : min), variants[0])
     : null;
 
   return {
