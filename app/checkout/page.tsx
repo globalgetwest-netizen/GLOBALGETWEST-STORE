@@ -24,10 +24,25 @@ export default async function CheckoutPage() {
     0,
   );
 
+  // Latest USD → local rates, so the customer sees the exact amount
+  // they'll be charged — /api/checkout converts with the same rows.
+  const fxRates: Record<string, number> = {};
+  for (const quote of ['GHS', 'NGN']) {
+    const { data: fx } = await supabase
+      .from('fx_rates')
+      .select('rate')
+      .eq('base_currency', 'USD')
+      .eq('quote_currency', quote)
+      .order('effective_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (fx) fxRates[quote] = Number(fx.rate);
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <h1 className="font-display text-3xl mb-8">Checkout</h1>
-      <CheckoutFlow cart={{ subtotalUsdCents, totalWeightGrams }} />
+      <CheckoutFlow cart={{ subtotalUsdCents, totalWeightGrams }} fxRates={fxRates} />
     </div>
   );
 }

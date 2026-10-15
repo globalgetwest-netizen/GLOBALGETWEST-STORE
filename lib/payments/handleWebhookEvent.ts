@@ -13,7 +13,7 @@ export async function handleWebhookEvent(event: VerifiedPaymentEvent) {
 
   const { data: payment, error: paymentLookupError } = await supabase
     .from('payments')
-    .select('id, order_id, status')
+    .select('id, order_id, status, currency, amount_minor_units')
     .eq('gateway', event.gateway)
     .eq('gateway_reference', event.gatewayReference)
     .single();
@@ -27,6 +27,27 @@ export async function handleWebhookEvent(event: VerifiedPaymentEvent) {
 
   // Idempotency guard — webhooks can arrive more than once.
   if (payment.status === 'succeeded') return;
+
+  // A "successful" payment only counts if it paid what we actually asked
+  // for, in the currency we asked for. Grey settles in USDC against a USD
+  // charge (1:1), so treat those as the same currency.
+  if (event.status === 'succeeded') {
+    const paidCurrency = event.currency.toUpperCase() === 'USDC' ? 'USD' : event.currency.toUpperCase();
+    const expectedAmount = Number(payment.amount_minor_units);
+    if (paidCurrency !== payment.currency.toUpperCase() || event.amountMinorUnits < expectedAmount) {
+      await supabase
+        .from('payments')
+        .update({ status: 'failed', raw_webhook_payload: event.rawPayload as any })
+        .eq('id', payment.id);
+      await logOrderEvent(
+        payment.order_id,
+        'note_added',
+        `Payment via ${event.gateway} NOT accepted: paid ${event.amountMinorUnits} ${event.currency}, `
+          + `expected ${expectedAmount} ${payment.currency} (${event.gatewayReference}). Review manually.`,
+      );
+      return;
+    }
+  }
 
   await supabase
     .from('payments')

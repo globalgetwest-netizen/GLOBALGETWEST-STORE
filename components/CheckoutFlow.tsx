@@ -2,7 +2,7 @@
 // components/CheckoutFlow.tsx
 import { useEffect, useState } from 'react';
 import { COUNTRIES, currencyForCountry, localCurrencyForCountry } from '@/lib/countries';
-import { formatUsd } from '@/lib/format';
+import { formatMoney, formatUsd } from '@/lib/format';
 import type { ShippingRateOption } from '@/lib/shipping/types';
 import { CONTACTS, contactForCountry } from '@/lib/contact';
 import { ContactAgentButton } from '@/components/ContactAgentButton';
@@ -22,7 +22,7 @@ const GATEWAYS_BY_CURRENCY: Record<string, { id: 'stripe' | 'flutterwave' | 'gre
   NGN: [{ id: 'flutterwave', label: 'Card / Mobile Money (Flutterwave)' }],
 };
 
-export function CheckoutFlow({ cart }: { cart: CartSummary }) {
+export function CheckoutFlow({ cart, fxRates }: { cart: CartSummary; fxRates: Record<string, number> }) {
   const [step, setStep] = useState<'address' | 'shipping' | 'payment'>('address');
   const [address, setAddress] = useState({
     fullName: '', phone: '', line1: '', line2: '',
@@ -93,7 +93,6 @@ export function CheckoutFlow({ cart }: { cart: CartSummary }) {
           billingAddressId: addrData.id,
           currency,
           gateway,
-          shippingUsdCents: selectedRate.amountUsdCents,
           shippingCarrier: selectedRate.carrier,
           shippingService: selectedRate.service,
           shippingRateId: selectedRate.id,
@@ -110,6 +109,14 @@ export function CheckoutFlow({ cart }: { cart: CartSummary }) {
   }
 
   const total = cart.subtotalUsdCents + (selectedRate?.amountUsdCents ?? 0);
+  // What the gateway will actually charge — same conversion and rounding as
+  // /api/checkout, so a Ghana customer sees GH₵ on the button, not $.
+  const chargeTotal = currency === 'USD'
+    ? total
+    : fxRates[currency] ? Math.round(total * fxRates[currency]) : null;
+  const totalLabel = currency === 'USD' || chargeTotal === null
+    ? formatUsd(total)
+    : formatMoney(chargeTotal, currency);
 
   return (
     <div className="grid md:grid-cols-3 gap-8">
@@ -231,7 +238,7 @@ export function CheckoutFlow({ cart }: { cart: CartSummary }) {
                   disabled={loading}
                   className="focus-ring mt-4 w-full bg-[var(--color-charcoal)] text-white font-semibold px-5 py-3 rounded hover:bg-black disabled:opacity-50"
                 >
-                  {loading ? 'Redirecting to payment…' : `Pay ${formatUsd(total)}`}
+                  {loading ? 'Redirecting to payment…' : `Pay ${totalLabel}`}
                 </button>
               </>
             )}
@@ -275,6 +282,12 @@ export function CheckoutFlow({ cart }: { cart: CartSummary }) {
           <span>Total</span>
           <span>{formatUsd(total)}</span>
         </div>
+        {currency !== 'USD' && chargeTotal !== null && (
+          <div className="flex justify-between font-semibold mt-1">
+            <span>You pay ({currency})</span>
+            <span>{formatMoney(chargeTotal, currency)}</span>
+          </div>
+        )}
       </div>
     </div>
   );

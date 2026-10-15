@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServerClient, supabaseServiceRole } from '@/lib/supabase/server';
 import { generateOrderNumber, logOrderEvent } from '@/lib/orders';
 import { getProvider, resolveGatewayForCurrency, PaymentError } from '@/lib/payments';
+import { quoteShippingForCart, findSelectedRate } from '@/lib/shipping/quote';
 
 export async function POST(req: NextRequest) {
   const supabase = await supabaseServerClient();
@@ -19,13 +20,12 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const {
     shippingAddressId, billingAddressId, currency, gateway: requestedGateway,
-    shippingUsdCents, shippingCarrier, shippingService, shippingRateId,
+    shippingCarrier, shippingService, shippingRateId,
   } = body as {
     shippingAddressId: string;
     billingAddressId: string;
     currency: string;
     gateway?: 'stripe' | 'flutterwave' | 'grey' | 'paystack';
-    shippingUsdCents: number;
     shippingCarrier?: string;
     shippingService?: string;
     shippingRateId?: string;
@@ -55,7 +55,41 @@ export async function POST(req: NextRequest) {
     return sum + item.product_variants.price_usd_cents * item.quantity;
   }, 0);
 
-  const shippingCents = shippingUsdCents ?? 0; // customer's chosen rate from /api/shipping-rates
+  // Re-price the customer's chosen shipping option server-side — any
+  // shipping amount in the request body is ignored. RLS scopes the address
+  // lookup to this user, so another customer's address id won't resolve.
+  const { data: shippingAddr } = await supabase
+    .from('addresses')
+    .select('full_name, phone, line1, line2, city, region, postal_code, country_code')
+    .eq('id', shippingAddressId)
+    .single();
+
+  if (!shippingAddr) {
+    return NextResponse.json({ error: 'Shipping address not found' }, { status: 400 });
+  }
+
+  const { rates } = await quoteShippingForCart(supabase, user.id, {
+    fullName: shippingAddr.full_name,
+    phone: shippingAddr.phone,
+    line1: shippingAddr.line1,
+    line2: shippingAddr.line2 ?? undefined,
+    city: shippingAddr.city,
+    region: shippingAddr.region ?? undefined,
+    postalCode: shippingAddr.postal_code ?? undefined,
+    countryCode: shippingAddr.country_code,
+  });
+  const shippingRate = findSelectedRate(rates, {
+    id: shippingRateId, carrier: shippingCarrier, service: shippingService,
+  });
+
+  if (!shippingRate) {
+    return NextResponse.json(
+      { error: 'That shipping option is no longer available — please go back and choose again' },
+      { status: 400 },
+    );
+  }
+
+  const shippingCents = shippingRate.amountUsdCents;
   const taxUsdCents = 0;      // TODO: wire up tax rules per region
   const totalUsdCents = subtotalUsdCents + shippingCents + taxUsdCents;
 
@@ -84,14 +118,6 @@ export async function POST(req: NextRequest) {
   //    would be ideal — kept as sequential inserts here for clarity.
   const orderNumber = generateOrderNumber();
 
-  // Denormalize shipping country onto the order for fast staff country-scoping
-  // (see migration 006) — avoids a join on every staff queue/order-list query.
-  const { data: shippingAddr } = await supabase
-    .from('addresses')
-    .select('country_code')
-    .eq('id', shippingAddressId)
-    .single();
-
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .insert({
@@ -105,10 +131,11 @@ export async function POST(req: NextRequest) {
       total_usd_cents: totalUsdCents,
       shipping_address_id: shippingAddressId,
       billing_address_id: billingAddressId,
-      shipping_carrier: shippingCarrier ?? null,
-      shipping_service: shippingService ?? null,
-      shipping_rate_id: shippingRateId ?? null,
-      shipping_country_code: shippingAddr?.country_code ?? null,
+      shipping_carrier: shippingRate.carrier,
+      shipping_service: shippingRate.service,
+      shipping_rate_id: shippingRate.id,
+      // Denormalized for fast staff country-scoping (see migration 006).
+      shipping_country_code: shippingAddr.country_code,
     })
     .select()
     .single();
