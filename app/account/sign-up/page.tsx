@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabaseBrowserClient } from '@/lib/supabase/client';
+import { readGuestCart, restoreGuestCart } from '@/lib/guestCart';
 
 export default function SignUpPage() {
   return (
@@ -30,6 +31,7 @@ function SignUpForm() {
     setError('');
 
     const supabase = supabaseBrowserClient();
+    const guestCart = await readGuestCart(supabase);
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -52,6 +54,7 @@ function SignUpForm() {
       return;
     }
 
+    await restoreGuestCart(guestCart);
     router.push(next);
     router.refresh();
   }

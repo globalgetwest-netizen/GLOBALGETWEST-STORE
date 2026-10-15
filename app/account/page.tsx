@@ -6,7 +6,7 @@ import { supabaseServerClient } from '@/lib/supabase/server';
 export default async function AccountPage() {
   const supabase = await supabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/account/sign-in?next=/account');
+  if (!user || user.is_anonymous) redirect('/account/sign-in?next=/account');
 
   const { data: profile } = await supabase
     .from('profiles')

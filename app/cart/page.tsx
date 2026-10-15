@@ -1,6 +1,5 @@
 // app/cart/page.tsx
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { supabaseServerClient } from '@/lib/supabase/server';
 import { formatUsd } from '@/lib/catalog';
 import { CartItemRow } from '@/components/CartItemRow';
@@ -9,17 +8,15 @@ export default async function CartPage() {
   const supabase = await supabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect('/account/sign-in?next=/cart');
-  }
-
-  const { data: items } = await supabase
+  // No session yet just means nothing has been added — show an empty cart
+  // instead of asking a visitor to sign in.
+  const { data: items } = user ? await supabase
     .from('cart_items')
     .select(`
       id, quantity,
       product_variants ( id, name, price_usd_cents, products ( name, slug, product_images ( url, sort_order ) ) )
     `)
-    .eq('profile_id', user!.id);
+    .eq('profile_id', user.id) : { data: [] };
 
   const cartItems = items ?? [];
   const subtotal = cartItems.reduce(

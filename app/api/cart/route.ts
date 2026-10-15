@@ -1,10 +1,12 @@
 // app/api/cart/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServerClient } from '@/lib/supabase/server';
+import { getOrCreateVisitor } from '@/lib/supabase/visitor';
 
 export async function POST(req: NextRequest) {
   const supabase = await supabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // Visitors don't need an account to add to cart — see lib/supabase/visitor.ts.
+  const user = await getOrCreateVisitor(supabase);
 
   if (!user) {
     return NextResponse.json({ error: 'Sign in to add items to your cart' }, { status: 401 });

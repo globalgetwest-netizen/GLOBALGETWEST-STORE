@@ -6,7 +6,7 @@ import { CheckoutFlow } from '@/components/CheckoutFlow';
 export default async function CheckoutPage() {
   const supabase = await supabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/account/sign-in?next=/checkout');
+  if (!user) redirect('/cart');
 
   const { data: items } = await supabase
     .from('cart_items')
@@ -41,8 +41,16 @@ export default async function CheckoutPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="font-display text-3xl mb-8">Checkout</h1>
-      <CheckoutFlow cart={{ subtotalUsdCents, totalWeightGrams }} fxRates={fxRates} />
+      <h1 className="font-display text-3xl mb-2">Checkout</h1>
+      {user.is_anonymous ? (
+        <p className="text-sm text-[var(--color-ink-soft)] mb-8">
+          No account needed.{' '}
+          <a href="/account/sign-in?next=/checkout" className="focus-ring text-[var(--color-forest)] hover:underline">
+            Have one? Sign in
+          </a>
+        </p>
+      ) : <div className="mb-6" />}
+      <CheckoutFlow cart={{ subtotalUsdCents, totalWeightGrams }} fxRates={fxRates} isGuest={!!user.is_anonymous} />
     </div>
   );
 }

@@ -41,7 +41,7 @@ export async function Header() {
           </form>
 
           <nav className="flex items-center gap-5 text-sm shrink-0">
-            {user ? (
+            {user && !user.is_anonymous ? (
               <>
                 <Link href="/account/orders" className="focus-ring text-[var(--color-ink-soft)] hover:text-[var(--color-forest)]">
                   Orders

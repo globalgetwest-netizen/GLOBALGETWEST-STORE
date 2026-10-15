@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { supabaseServerClient } from '@/lib/supabase/server';
 import { formatUsd } from '@/lib/catalog';
+import { SaveGuestDetails } from '@/components/SaveGuestDetails';
 
 export default async function OrderSuccessPage({
   params,
@@ -11,10 +12,13 @@ export default async function OrderSuccessPage({
 }) {
   const { id } = await params;
   const supabase = await supabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
   const { data: order } = await supabase
     .from('orders')
-    .select('order_number, status, total_usd_cents, currency, shipping_carrier, shipping_service')
+    // '*' rather than a column list so this page doesn't break if migration
+    // 014 (contact_email) hasn't been run yet.
+    .select('*')
     .eq('id', id)
     .single();
 
@@ -47,6 +51,11 @@ export default async function OrderSuccessPage({
             ? 'If you think this is a mistake, contact support with your order number.'
             : "If you completed payment and this doesn't update shortly, contact support with your order number."}
       </p>
+      {user?.is_anonymous && order.contact_email && (
+        <div className="mb-8">
+          <SaveGuestDetails email={order.contact_email} />
+        </div>
+      )}
       <Link href="/products" className="focus-ring text-[var(--color-forest)] font-medium hover:underline">
         Continue shopping →
       </Link>

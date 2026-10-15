@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const {
     shippingAddressId, billingAddressId, currency, gateway: requestedGateway,
-    shippingCarrier, shippingService, shippingRateId,
+    shippingCarrier, shippingService, shippingRateId, email: guestEmail,
   } = body as {
     shippingAddressId: string;
     billingAddressId: string;
@@ -29,7 +29,16 @@ export async function POST(req: NextRequest) {
     shippingCarrier?: string;
     shippingService?: string;
     shippingRateId?: string;
+    email?: string;
   };
+
+  // Guests (no account) type their email at checkout; registered customers
+  // use the email on their account. Gateways need one for the receipt.
+  const isGuest = !!user.is_anonymous;
+  const customerEmail = isGuest ? guestEmail?.trim().toLowerCase() : user.email;
+  if (!customerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+    return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 });
+  }
 
   // 1. Load the customer's cart with variant + product data (RLS scopes this to the user)
   const { data: cartItems, error: cartError } = await supabase
@@ -136,6 +145,9 @@ export async function POST(req: NextRequest) {
       shipping_rate_id: shippingRate.id,
       // Denormalized for fast staff country-scoping (see migration 006).
       shipping_country_code: shippingAddr.country_code,
+      // Only set for guests, so registered checkout keeps working even
+      // before migration 014 has been run.
+      ...(isGuest ? { contact_email: customerEmail } : {}),
     })
     .select()
     .single();
@@ -159,7 +171,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: itemsError.message }, { status: 500 });
   }
 
-  await logOrderEvent(order.id, 'created', `Order placed via checkout, currency ${currency}`, user.id);
+  await logOrderEvent(
+    order.id, 'created',
+    `Order placed via ${isGuest ? 'guest ' : ''}checkout, currency ${currency}`, user.id,
+  );
+
+  // Give the guest's profile a name and phone so staff/admin screens show
+  // who ordered (profiles.email stays empty — it's unique per account).
+  if (isGuest) {
+    await svc.from('profiles')
+      .update({ full_name: shippingAddr.full_name, phone: shippingAddr.phone })
+      .eq('id', user.id);
+  }
 
   // 5. Create the hosted checkout session with the resolved (or requested) gateway
   const gateway = requestedGateway ?? resolveGatewayForCurrency(currency);
@@ -183,8 +206,8 @@ export async function POST(req: NextRequest) {
       orderNumber: order.order_number,
       currency,
       amountMinorUnits,
-      customerEmail: user.email!,
-      customerName: user.user_metadata?.full_name ?? user.email!,
+      customerEmail,
+      customerName: user.user_metadata?.full_name ?? shippingAddr.full_name,
       successUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/orders/${order.id}/success`,
       cancelUrl: `${process.env.NEXT_PUBLIC_SITE_URL}/checkout?cancelled=1`,
     });

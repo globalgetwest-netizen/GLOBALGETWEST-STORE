@@ -22,8 +22,12 @@ const GATEWAYS_BY_CURRENCY: Record<string, { id: 'stripe' | 'flutterwave' | 'gre
   NGN: [{ id: 'flutterwave', label: 'Card / Mobile Money (Flutterwave)' }],
 };
 
-export function CheckoutFlow({ cart, fxRates }: { cart: CartSummary; fxRates: Record<string, number> }) {
+export function CheckoutFlow({
+  cart, fxRates, isGuest = false,
+}: { cart: CartSummary; fxRates: Record<string, number>; isGuest?: boolean }) {
   const [step, setStep] = useState<'address' | 'shipping' | 'payment'>('address');
+  const [email, setEmail] = useState('');
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const [address, setAddress] = useState({
     fullName: '', phone: '', line1: '', line2: '',
     city: '', region: '', postalCode: '', countryCode: 'US',
@@ -96,6 +100,7 @@ export function CheckoutFlow({ cart, fxRates }: { cart: CartSummary; fxRates: Re
           shippingCarrier: selectedRate.carrier,
           shippingService: selectedRate.service,
           shippingRateId: selectedRate.id,
+          ...(isGuest ? { email } : {}),
         }),
       });
       const data = await res.json();
@@ -125,6 +130,9 @@ export function CheckoutFlow({ cart, fxRates }: { cart: CartSummary; fxRates: Re
         <section className="border border-[var(--color-border)] rounded-lg p-5 bg-white/60">
           <h2 className="font-display text-lg mb-4">1. Contact &amp; Delivery Address</h2>
           <div className="grid sm:grid-cols-2 gap-3">
+            {isGuest && (
+              <Field label="Email (for your receipt)" type="email" value={email} onChange={setEmail} className="sm:col-span-2" />
+            )}
             <Field label="Full name" value={address.fullName} onChange={(v) => setAddress({ ...address, fullName: v })} />
             <Field label="Phone" value={address.phone} onChange={(v) => setAddress({ ...address, phone: v })} />
             <Field label="Address line 1" value={address.line1} onChange={(v) => setAddress({ ...address, line1: v })} className="sm:col-span-2" />
@@ -157,7 +165,7 @@ export function CheckoutFlow({ cart, fxRates }: { cart: CartSummary; fxRates: Re
           {step === 'address' && (
             <button
               onClick={fetchRates}
-              disabled={loading || !address.fullName || !address.line1 || !address.city}
+              disabled={loading || !address.fullName || !address.phone || !address.line1 || !address.city || (isGuest && !emailValid)}
               className="focus-ring mt-4 bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black disabled:opacity-50"
             >
               {loading ? 'Finding shipping options…' : 'Continue to Shipping'}
@@ -294,15 +302,15 @@ export function CheckoutFlow({ cart, fxRates }: { cart: CartSummary; fxRates: Re
 }
 
 function Field({
-  label, value, onChange, className = '', required = true,
+  label, value, onChange, className = '', required = true, type = 'text',
 }: {
-  label: string; value: string; onChange: (v: string) => void; className?: string; required?: boolean;
+  label: string; value: string; onChange: (v: string) => void; className?: string; required?: boolean; type?: string;
 }) {
   return (
     <div className={className}>
       <label className="block text-sm font-medium mb-1.5">{label}</label>
       <input
-        type="text"
+        type={type}
         value={value}
         required={required}
         onChange={(e) => onChange(e.target.value)}
