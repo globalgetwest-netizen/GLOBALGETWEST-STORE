@@ -13,6 +13,16 @@ export async function Header() {
   // from the actual categories table, which is why admin changes never
   // showed up here. Capped to a curated set (by sort_order) so the nav bar
   // stays clean as the catalog grows, rather than dumping every category.
+  // Cart badge — counts units for whoever holds the session, guest or not.
+  let cartCount = 0;
+  if (user) {
+    const { data: cartRows } = await supabase
+      .from('cart_items')
+      .select('quantity')
+      .eq('profile_id', user.id);
+    cartCount = (cartRows ?? []).reduce((sum, r) => sum + (r.quantity ?? 0), 0);
+  }
+
   const { data: navCategories } = await supabase
     .from('categories')
     .select('name, slug')
@@ -55,8 +65,17 @@ export async function Header() {
                 Sign In
               </Link>
             )}
-            <Link href="/cart" className="focus-ring text-[var(--color-ink)] hover:text-[var(--color-forest)] font-medium">
+            <Link
+              href="/cart"
+              aria-label={cartCount ? `Cart, ${cartCount} item${cartCount === 1 ? '' : 's'}` : 'Cart'}
+              className="focus-ring inline-flex items-center gap-1.5 text-[var(--color-ink)] hover:text-[var(--color-forest)] font-medium"
+            >
               Cart
+              {cartCount > 0 && (
+                <span className="min-w-5 h-5 px-1.5 inline-flex items-center justify-center rounded-full bg-[var(--color-charcoal)] text-white text-[11px] font-semibold">
+                  {cartCount > 99 ? '99+' : cartCount}
+                </span>
+              )}
             </Link>
           </nav>
         </div>

@@ -72,6 +72,15 @@ function SignInForm() {
         </button>
       </form>
 
+      {(next.startsWith('/checkout') || next.startsWith('/cart')) && (
+        <Link
+          href={next}
+          className="focus-ring mt-3 block w-full text-center border border-[var(--color-charcoal)] font-semibold px-5 py-2.5 rounded hover:bg-[var(--color-parchment-warm)]"
+        >
+          Continue as guest
+        </Link>
+      )}
+
       <p className="text-sm text-[var(--color-ink-soft)] mt-6 text-center">
         New here?{' '}
         <Link href={`/account/sign-up?next=${encodeURIComponent(next)}`} className="focus-ring text-[var(--color-forest)] font-medium hover:underline">

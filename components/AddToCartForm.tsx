@@ -40,6 +40,7 @@ export function AddToCartForm({ variants }: { variants: Variant[] }) {
         throw new Error(data.error ?? 'Failed to add to cart');
       }
       setStatus('added');
+      router.refresh();
     } catch (err) {
       setStatus('error');
       setErrorMsg(err instanceof Error ? err.message : 'Something went wrong');
