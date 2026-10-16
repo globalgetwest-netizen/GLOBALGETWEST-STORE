@@ -208,6 +208,12 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                 <li>
                   Your <span className="text-[var(--color-ink)]">{contact.label}</span> agent sends our bank or Western Union
                   details on WhatsApp ({contact.phone}).
+                  {contact.agents.filter((a) => a.role === 'Western Union').map((a) => (
+                    <span key={a.phone}>
+                      {' '}For Western Union you can also call or WhatsApp our Western Union desk on{' '}
+                      <span className="text-[var(--color-ink)] whitespace-nowrap">{a.phone}</span>.
+                    </span>
+                  ))}
                 </li>
                 <li>
                   Pay <span className="text-[var(--color-ink)] font-semibold">{totalLabel}</span> and use{' '}

@@ -129,6 +129,31 @@ export default async function OrderSuccessPage({
               message={`Hello, I've paid ${amountLabel} for order ${order.order_number}. My proof of payment is attached.`}
             />
           </div>
+          {contact.private && (
+            <div className="mt-5 pt-5 border-t border-[var(--color-border)]">
+              <p className="font-medium mb-1">Paying by Western Union?</p>
+              <p className="text-[var(--color-ink-soft)] mb-3">
+                Our Africa Western Union desk can guide you by phone or WhatsApp.
+              </p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <WhatsAppAction
+                  whatsappNumber=""
+                  agentIndex={1}
+                  call
+                  variant="secondary"
+                  label="Call Western Union desk"
+                  message=""
+                />
+                <WhatsAppAction
+                  whatsappNumber=""
+                  agentIndex={1}
+                  variant="secondary"
+                  label="WhatsApp Western Union desk"
+                  message={`Hello, I'd like to pay ${amountLabel} for order ${order.order_number} by Western Union. Please send me the details.`}
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
