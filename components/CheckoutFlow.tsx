@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { COUNTRIES, currencyForCountry, localCurrencyForCountry } from '@/lib/countries';
 import { formatMoney, formatUsd } from '@/lib/format';
 import type { ShippingRateOption } from '@/lib/shipping/types';
-import { CONTACTS, SUPPORT_EMAIL, contactForCountry } from '@/lib/contact';
+import { SUPPORT_EMAIL, contactForCountry } from '@/lib/contact';
 import { ContactAgentButton } from '@/components/ContactAgentButton';
 
 export interface CheckoutLineItem {
@@ -294,7 +294,7 @@ export function CheckoutFlow({
               phone={contact.phone}
               whatsappNumber={contact.whatsapp}
               message={`Hi, I'd like to arrange payment for an order.\n\nName: ${address.fullName}\nCountry: ${country}\nOrder total: ${totalLabel}\n\n(Please confirm the items with me.)`}
-              revealImmediately={contact.label !== CONTACTS.africa.label}
+              revealImmediately={!contact.private}
             />
           </div>
         </Section>

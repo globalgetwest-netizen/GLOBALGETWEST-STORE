@@ -96,9 +96,8 @@ export async function Footer() {
               />
             </li>
             <li>
-              {/* Africa number kept hidden-until-click — it's a Ghana
-                  country code, and the brand's stated position is to never
-                  visibly indicate a Ghana/Africa presence on the site. */}
+              {/* Africa number is loaded only on click — it isn't in the
+                  page HTML or the site's JavaScript (see lib/contactPrivate). */}
               <ContactAgentButton
                 label={CONTACTS.africa.label}
                 phone={CONTACTS.africa.phone}

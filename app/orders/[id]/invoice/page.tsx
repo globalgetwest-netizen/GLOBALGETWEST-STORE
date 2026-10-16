@@ -13,6 +13,7 @@ import { formatMoney, formatUsd } from '@/lib/format';
 import { getOrderCharge, PAID_STATUSES } from '@/lib/orderCharge';
 import { COUNTRIES } from '@/lib/countries';
 import { SUPPORT_EMAIL, contactForCountry } from '@/lib/contact';
+import { withPrivateNumber } from '@/lib/contactPrivate';
 import { PrintButton } from '@/components/PrintButton';
 
 export const metadata: Metadata = {
@@ -75,7 +76,9 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
 
   const totalLabel = formatMoney(charge.amountMinorUnits, charge.currency);
   const country = COUNTRIES.find((c) => c.code === address?.country_code)?.name ?? address?.country_code ?? '';
-  const contact = contactForCountry(order.shipping_country_code ?? address?.country_code ?? '');
+  // The invoice is the customer's own document, so it prints their
+  // agent's number in full — including the Africa agent's.
+  const contact = withPrivateNumber(contactForCountry(order.shipping_country_code ?? address?.country_code ?? ''));
 
   return (
     <div className="mx-auto max-w-[860px] px-4 py-10 print:p-0 print:max-w-none">
