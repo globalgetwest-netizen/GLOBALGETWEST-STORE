@@ -49,7 +49,7 @@ export function CheckoutFlow({
   });
   const [rates, setRates] = useState<ShippingRateOption[] | null>(null);
   const [selectedRate, setSelectedRate] = useState<ShippingRateOption | null>(null);
-  const [chosenGateway, setGateway] = useState<GatewayId | null>(null);
+  const [chosenGateway, setGateway] = useState<GatewayId | 'agent' | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -57,12 +57,24 @@ export function CheckoutFlow({
   const availableGateways = (GATEWAYS_BY_CURRENCY[currency] ?? GATEWAYS_BY_CURRENCY.USD)
     .filter((g) => enabledGateways.includes(g.id));
 
-  // Always submit a gateway that's valid for the current currency — a stale
-  // choice from a previous country (e.g. Paystack after switching to a USD
-  // address) falls back to the first valid option instead.
-  const gateway = availableGateways.some((g) => g.id === chosenGateway)
-    ? chosenGateway
-    : availableGateways[0]?.id ?? null;
+  // Online methods first, then agent-assisted bank transfer / Western Union,
+  // which is always available so every country can complete an order.
+  const contact = contactForCountry(address.countryCode);
+  const paymentOptions: { id: GatewayId | 'agent'; label: string; detail: string }[] = [
+    ...availableGateways,
+    {
+      id: 'agent',
+      label: 'Bank transfer or Western Union',
+      detail: `Place your order now. Your ${contact.label} agent sends payment details on WhatsApp.`,
+    },
+  ];
+
+  // Always submit an option that's valid for the current country — a stale
+  // choice from a previous country falls back to the first valid option.
+  const gateway = paymentOptions.some((g) => g.id === chosenGateway)
+    ? chosenGateway!
+    : paymentOptions[0].id;
+  const isAgent = gateway === 'agent';
 
   async function fetchRates() {
     setLoading(true);
@@ -137,7 +149,6 @@ export function CheckoutFlow({
     : formatMoney(chargeTotal, currency);
 
   const country = COUNTRIES.find((c) => c.code === address.countryCode)?.name ?? address.countryCode;
-  const contact = contactForCountry(address.countryCode);
   const setField = (key: keyof typeof address) => (v: string) => {
     setAddress({ ...address, [key]: v });
     if (step !== 'address') { setStep('address'); setRates(null); setSelectedRate(null); }
@@ -237,47 +248,46 @@ export function CheckoutFlow({
 
         {/* Step 3: Payment */}
         <Section number={3} title="Payment" locked={step !== 'payment'}>
-          {availableGateways.length === 0 ? (
-            <div className="rounded-md border border-[var(--color-ochre)]/40 bg-[var(--color-ochre)]/10 px-4 py-3.5 text-sm">
-              <p className="font-medium mb-1">Online payment for your country is coming soon</p>
-              <p className="text-[var(--color-ink-soft)]">
-                Message us below or email{' '}
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>{' '}
-                and we&apos;ll arrange payment by bank transfer. Your cart is saved.
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-2.5">
-                {availableGateways.map((g) => (
-                  <Choice key={g.id} name="gateway" checked={gateway === g.id} onChange={() => setGateway(g.id)}
-                    title={g.label} detail={g.detail} />
-                ))}
-              </div>
-              <button
-                onClick={submitOrder}
-                disabled={loading}
-                className="focus-ring mt-6 w-full bg-[var(--color-charcoal)] text-white font-semibold px-6 py-4 rounded hover:bg-black transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Taking you to secure payment…' : `Pay ${totalLabel}`}
-              </button>
-              <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-[var(--color-ink-soft)]">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" />
-                </svg>
-                You&apos;ll complete payment on a secure, encrypted page.
-              </p>
-            </>
+          <div className="space-y-2.5">
+            {paymentOptions.map((g) => (
+              <Choice key={g.id} name="gateway" checked={gateway === g.id} onChange={() => setGateway(g.id)}
+                title={g.label} detail={g.detail} />
+            ))}
+          </div>
+
+          {isAgent && (
+            <ol className="mt-4 rounded-md bg-[var(--color-parchment-warm)] border border-[var(--color-border)] px-5 py-4 text-sm space-y-1.5 list-decimal list-inside text-[var(--color-ink-soft)]">
+              <li><span className="text-[var(--color-ink)]">Place your order</span> — we reserve your items and give you an order number.</li>
+              <li><span className="text-[var(--color-ink)]">Your agent messages you</span> on WhatsApp with bank or Western Union details.</li>
+              <li><span className="text-[var(--color-ink)]">We ship</span> as soon as your payment is confirmed.</li>
+            </ol>
           )}
 
-          {/* Manual payment via WhatsApp — an ADDITION alongside the real
-              gateways above, not a replacement. Routes to the regional
-              contact based on the customer's country. The Africa number is
-              deliberately hidden until the customer clicks — never in the
-              page's initial HTML; the US/Europe number is fine to show. */}
+          <button
+            onClick={submitOrder}
+            disabled={loading}
+            className="focus-ring mt-6 w-full bg-[var(--color-charcoal)] text-white font-semibold px-6 py-4 rounded hover:bg-black transition-colors disabled:opacity-50"
+          >
+            {loading
+              ? (isAgent ? 'Placing your order…' : 'Taking you to secure payment…')
+              : (isAgent ? `Place order · ${totalLabel}` : `Pay ${totalLabel}`)}
+          </button>
+          <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-[var(--color-ink-soft)]">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
+            {isAgent
+              ? 'No payment is taken now. Your details stay private.'
+              : 'You\'ll complete payment on a secure, encrypted page.'}
+          </p>
+
+          {/* Questions before ordering — routes to the regional agent. The
+              Africa number is deliberately hidden until the customer clicks
+              (never in the page's initial HTML); others show directly. */}
           <div className="mt-6 pt-5 border-t border-[var(--color-border)]">
             <p className="text-sm text-[var(--color-ink-soft)] mb-3">
-              Prefer bank transfer or Western Union? Message us and we&apos;ll arrange it directly.
+              Questions before you order? Your agent is a message away. You can also email{' '}
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>.
             </p>
             <ContactAgentButton
               label={contact.label}

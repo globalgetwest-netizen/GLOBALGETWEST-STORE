@@ -26,7 +26,9 @@ export async function POST(req: NextRequest) {
     shippingAddressId: string;
     billingAddressId: string;
     currency: string;
-    gateway?: 'stripe' | 'flutterwave' | 'grey' | 'paystack';
+    // 'agent' = no online payment: the order is placed and the customer's
+    // regional agent arranges bank transfer / Western Union on WhatsApp.
+    gateway?: 'stripe' | 'flutterwave' | 'grey' | 'paystack' | 'agent';
     shippingCarrier?: string;
     shippingService?: string;
     shippingRateId?: string;
@@ -39,6 +41,26 @@ export async function POST(req: NextRequest) {
   const customerEmail = isGuest ? guestEmail?.trim().toLowerCase() : user.email;
   if (!customerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
     return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 });
+  }
+
+  const isAgentPayment = requestedGateway === 'agent';
+  const gateway = isAgentPayment ? null : (requestedGateway ?? resolveGatewayForCurrency(currency));
+  if (gateway) {
+    if (!configuredGateways().includes(gateway)) {
+      return NextResponse.json(
+        { error: "That payment method isn't available right now. Choose bank transfer and your agent will help." },
+        { status: 400 },
+      );
+    }
+    // Defense in depth: never let a client-supplied gateway charge in a
+    // currency it doesn't support (e.g. Paystack + USD, unconfirmed on this
+    // account — see supportedCurrencies() in lib/payments/paystack.ts).
+    if (!getProvider(gateway).supportedCurrencies().includes(currency.toUpperCase())) {
+      return NextResponse.json(
+        { error: `${gateway} does not support ${currency} on this account` },
+        { status: 400 },
+      );
+    }
   }
 
   // 1. Load the customer's cart with variant + product data (RLS scopes this to the user)
@@ -175,7 +197,9 @@ export async function POST(req: NextRequest) {
 
   await logOrderEvent(
     order.id, 'created',
-    `Order placed via ${isGuest ? 'guest ' : ''}checkout, currency ${currency}`, user.id,
+    `Order placed via ${isGuest ? 'guest ' : ''}checkout, currency ${currency}`
+      + (isAgentPayment ? ' — awaiting bank transfer / Western Union arranged by regional agent' : ''),
+    user.id,
   );
 
   // Give the guest's profile a name and phone so staff/admin screens show
@@ -186,27 +210,15 @@ export async function POST(req: NextRequest) {
       .eq('id', user.id);
   }
 
-  // 5. Create the hosted checkout session with the resolved (or requested) gateway
-  const gateway = requestedGateway ?? resolveGatewayForCurrency(currency);
-  const provider = getProvider(gateway);
+  // Agent-assisted payment: the order is placed now (so it shows in admin and
+  // the customer has an order number), and payment is arranged on WhatsApp.
+  if (!gateway) {
+    await supabase.from('cart_items').delete().eq('profile_id', user.id);
+    return NextResponse.json({ redirectUrl: `/orders/${order.id}/success`, orderId: order.id });
+  }
 
-  // Defense in depth: never let a client-supplied gateway charge in a
-  // currency it doesn't actually support (e.g. Paystack + USD, unconfirmed
-  // on this account — see supportedCurrencies() in lib/payments/paystack.ts).
-  // The frontend already prevents this via GATEWAYS_BY_CURRENCY, but a
-  // request could bypass that — this check is what actually stops it.
-  if (!configuredGateways().includes(gateway)) {
-    return NextResponse.json(
-      { error: "That payment method isn't available right now. Message us and we'll arrange payment." },
-      { status: 400 },
-    );
-  }
-  if (!provider.supportedCurrencies().includes(currency.toUpperCase())) {
-    return NextResponse.json(
-      { error: `${gateway} does not support ${currency} on this account` },
-      { status: 400 },
-    );
-  }
+  // 5. Create the hosted checkout session with the validated gateway
+  const provider = getProvider(gateway);
 
   try {
     const session = await provider.createCheckoutSession({
