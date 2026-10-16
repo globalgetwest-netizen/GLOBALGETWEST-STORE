@@ -21,11 +21,26 @@ export const CONTACTS: Record<'usEurope' | 'africa' | 'asia', AgentContact> = {
   asia: { phone: '+971600337701', whatsapp: '971600337701', label: 'Asia', private: false },
 };
 
-/** Fetch the private (Africa) agent number on demand, in the browser. */
-export async function loadPrivateContactNumber(): Promise<{ phone: string; whatsapp: string }> {
+export interface AgentNumber {
+  phone: string;
+  whatsapp: string;
+  /** What this agent handles, e.g. 'Western Union' — shown next to the number. */
+  role?: string;
+  /** Offer a tap-to-call link as well as WhatsApp. */
+  callable?: boolean;
+}
+
+export function telLink(phone: string): string {
+  return `tel:${phone.replace(/[^+\d]/g, '')}`;
+}
+
+/** Fetch the private (Africa) agents' numbers on demand, in the browser. */
+export async function loadPrivateContactNumbers(): Promise<AgentNumber[]> {
   const res = await fetch('/api/agent-contact', { cache: 'no-store' });
   if (!res.ok) throw new Error('Could not load contact');
-  return res.json();
+  const data = (await res.json()) as { agents?: AgentNumber[] };
+  if (!data.agents?.length) throw new Error('No agent available');
+  return data.agents;
 }
 
 // North America + Europe route to the US/Europe contact. Africa and Asia
