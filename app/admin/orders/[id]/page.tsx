@@ -40,7 +40,17 @@ export default async function AdminOrderDetailPage({
 
   return (
     <div>
-      <h1 className="font-display text-3xl mb-1">{order.order_number}</h1>
+      <div className="flex flex-wrap items-baseline justify-between gap-3 mb-1">
+        <h1 className="font-display text-3xl">{order.order_number}</h1>
+        <a
+          href={`/orders/${order.id}/invoice`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="focus-ring text-sm font-medium text-[var(--color-forest)] hover:underline"
+        >
+          Open invoice / receipt ↗
+        </a>
+      </div>
       <p className="text-[var(--color-ink-soft)] text-sm mb-8">
         Placed {new Date(order.created_at).toLocaleString()} by {customer?.full_name ?? 'customer'}
         {order.contact_email && <> · guest checkout · {order.contact_email}</>}

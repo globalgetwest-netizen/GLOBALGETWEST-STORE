@@ -19,7 +19,7 @@ export async function Footer() {
     .limit(6);
 
   return (
-    <footer className="mt-16 border-t border-[var(--color-border)] bg-[var(--color-parchment-warm)]">
+    <footer className="print:hidden mt-16 border-t border-[var(--color-border)] bg-[var(--color-parchment-warm)]">
       <div className="mx-auto max-w-[1600px] px-4 py-8 grid grid-cols-1 sm:grid-cols-5 gap-6 text-sm text-[var(--color-ink-soft)]">
         <div>
           <div className="flex items-center gap-2 mb-2">

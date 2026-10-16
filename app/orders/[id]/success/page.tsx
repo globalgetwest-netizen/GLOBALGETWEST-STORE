@@ -2,11 +2,12 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { supabaseServerClient } from '@/lib/supabase/server';
-import { formatMoney, formatUsd } from '@/lib/format';
+import { formatMoney } from '@/lib/format';
+import { getOrderCharge, PAID_STATUSES } from '@/lib/orderCharge';
 import { SaveGuestDetails } from '@/components/SaveGuestDetails';
 import { RefreshWhilePending } from '@/components/RefreshWhilePending';
-import { ContactAgentButton } from '@/components/ContactAgentButton';
-import { CONTACTS, contactForCountry } from '@/lib/contact';
+import { WhatsAppAction } from '@/components/WhatsAppAction';
+import { contactForCountry } from '@/lib/contact';
 
 export default async function OrderSuccessPage({
   params,
@@ -27,38 +28,18 @@ export default async function OrderSuccessPage({
 
   if (!order) notFound();
 
-  // Show what the customer was actually charged (e.g. GH₵ for Ghana), not
-  // just the USD reference total.
-  const { data: payment } = await supabase
-    .from('payments')
-    .select('currency, amount_minor_units')
-    .eq('order_id', id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  // No payment attempt on a pending order = the customer chose bank transfer
-  // / Western Union, arranged by their regional agent on WhatsApp.
-  const isAgentOrder = !payment && order.status === 'pending_payment';
-
-  let amountLabel = formatUsd(order.total_usd_cents);
-  if (payment && payment.currency !== 'USD') {
-    amountLabel = formatMoney(Number(payment.amount_minor_units), payment.currency);
-  } else if (isAgentOrder && order.currency !== 'USD') {
-    const { data: fx } = await supabase
-      .from('fx_rates')
-      .select('rate')
-      .eq('base_currency', 'USD')
-      .eq('quote_currency', order.currency)
-      .order('effective_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (fx) amountLabel = formatMoney(Math.round(order.total_usd_cents * Number(fx.rate)), order.currency);
-  }
+  // What the customer was actually charged (e.g. GH₵ for Ghana) — the same
+  // figure the invoice shows.
+  const charge = await getOrderCharge(supabase, order);
+  const amountLabel = formatMoney(charge.amountMinorUnits, charge.currency);
+  // No online payment attempt on a pending order = the customer chose bank
+  // transfer / Western Union, arranged by their regional agent on WhatsApp.
+  const isAgentOrder = !charge.hasOnlinePayment && order.status === 'pending_payment';
   const contact = contactForCountry(order.shipping_country_code ?? '');
 
   // Only these statuses mean money was actually received — 'cancelled' and
   // 'refunded' must not show a thank-you as if the order went through.
-  const paid = ['paid', 'processing', 'fulfilled', 'shipped', 'delivered'].includes(order.status);
+  const paid = PAID_STATUSES.includes(order.status);
   const closed = order.status === 'cancelled' || order.status === 'refunded';
 
   return (
@@ -125,21 +106,43 @@ export default async function OrderSuccessPage({
 
       {isAgentOrder && (
         <div className="mt-6 rounded-lg border border-[var(--color-border)] bg-white p-6 text-sm">
-          <p className="font-medium mb-3">How to complete payment</p>
-          <ol className="space-y-1.5 list-decimal list-inside text-[var(--color-ink-soft)] mb-5">
-            <li>Message your agent with your order number <strong className="text-[var(--color-ink)]">{order.order_number}</strong>.</li>
-            <li>Pay {amountLabel} by bank transfer or Western Union using the details they send.</li>
-            <li>We confirm your payment and ship your order.</li>
+          <p className="font-display text-lg mb-3">How to complete payment</p>
+          <ol className="space-y-1.5 list-decimal list-inside text-[var(--color-ink-soft)] mb-6">
+            <li>Get our bank or Western Union details from your {contact.label} agent on WhatsApp.</li>
+            <li>
+              Pay <strong className="text-[var(--color-ink)]">{amountLabel}</strong> using{' '}
+              <strong className="text-[var(--color-ink)]">{order.order_number}</strong> as the payment reference.
+            </li>
+            <li>Send a photo of your bank slip or Western Union receipt to your agent.</li>
+            <li>We confirm your payment, send your receipt and ship your order.</li>
           </ol>
-          <ContactAgentButton
-            label={contact.label}
-            phone={contact.phone}
-            whatsappNumber={contact.whatsapp}
-            message={`Hi, I've placed order ${order.order_number} (${amountLabel}) and would like to pay by bank transfer or Western Union. Please send me the payment details.`}
-            revealImmediately={contact.label !== CONTACTS.africa.label}
-          />
+          <div className="grid sm:grid-cols-2 gap-3">
+            <WhatsAppAction
+              whatsappNumber={contact.whatsapp}
+              label="Get payment details"
+              message={`Hello, I've placed order ${order.order_number} for ${amountLabel} and would like to pay by bank transfer or Western Union. Please send me the payment details.`}
+            />
+            <WhatsAppAction
+              whatsappNumber={contact.whatsapp}
+              variant="secondary"
+              label="Send payment proof"
+              message={`Hello, I've paid ${amountLabel} for order ${order.order_number}. My proof of payment is attached.`}
+            />
+          </div>
         </div>
       )}
+
+      <div className="mt-6 text-center">
+        <Link
+          href={`/orders/${order.id}/invoice`}
+          className="focus-ring inline-flex items-center gap-2 text-sm font-medium text-[var(--color-forest)] hover:underline"
+        >
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M10 13h6M10 17h6" />
+          </svg>
+          {paid ? 'View and download receipt' : 'View and download invoice'}
+        </Link>
+      </div>
 
       {user?.is_anonymous && order.contact_email && paid && (
         <div className="mt-6">
