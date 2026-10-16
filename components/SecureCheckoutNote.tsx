@@ -14,9 +14,7 @@ export function SecureCheckoutNote() {
         </svg>
         Secure, encrypted payment. We never see your card details.
       </p>
-      <div className="origin-left scale-90">
-        <PaymentBadges />
-      </div>
+      <PaymentBadges />
     </div>
   );
 }
