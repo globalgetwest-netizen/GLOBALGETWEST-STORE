@@ -40,19 +40,24 @@ export default async function OrderHistoryPage() {
       ) : (
         <div className="space-y-3">
           {orders.map((o) => (
-            <Link
+            <div
               key={o.id}
-              href={`/orders/${o.id}/success`}
-              className="focus-ring flex items-center justify-between border border-[var(--color-border)] rounded-lg p-4 bg-white/60 hover:shadow-sm transition-shadow"
+              className="flex items-center justify-between gap-4 border border-[var(--color-border)] rounded-lg p-4 bg-white/60"
             >
-              <div>
+              <Link href={`/orders/${o.id}/success`} className="focus-ring flex-1 min-w-0 hover:text-[var(--color-forest)]">
                 <p className="font-medium text-sm">{o.order_number}</p>
                 <p className="text-xs text-[var(--color-ink-soft)]">
                   {new Date(o.created_at).toLocaleDateString()} · {STATUS_LABELS[o.status] ?? o.status}
                 </p>
-              </div>
+              </Link>
               <p className="font-semibold">{formatUsd(o.total_usd_cents)}</p>
-            </Link>
+              <Link
+                href={`/orders/${o.id}/invoice`}
+                className="focus-ring text-xs font-medium text-[var(--color-forest)] border border-[var(--color-border)] rounded px-2.5 py-1.5 hover:bg-[var(--color-parchment-warm)]"
+              >
+                {['paid', 'processing', 'fulfilled', 'shipped', 'delivered'].includes(o.status) ? 'Receipt' : 'Invoice'}
+              </Link>
+            </div>
           ))}
         </div>
       )}

@@ -31,7 +31,7 @@ export async function Header() {
     .limit(6);
 
   return (
-    <header className="sticky top-0 z-40 bg-white text-[var(--color-ink)] border-b border-[var(--color-border)]">
+    <header className="print:hidden sticky top-0 z-40 bg-white text-[var(--color-ink)] border-b border-[var(--color-border)]">
       <div className="mx-auto max-w-[1600px] px-4">
         <div className="flex items-center gap-6 h-16">
           <Link href="/" className="focus-ring flex items-center gap-2.5 shrink-0">

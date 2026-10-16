@@ -54,3 +54,11 @@ h1, h2, h3, .font-display {
   outline: 2px solid var(--color-ochre);
   outline-offset: 2px;
 }
+
+/* Invoices and receipts print as a clean A4 page — the site header and
+   footer are hidden with Tailwind's print: variant. */
+@media print {
+  @page { size: A4; margin: 16mm 14mm; }
+  html, body { background: #ffffff !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
