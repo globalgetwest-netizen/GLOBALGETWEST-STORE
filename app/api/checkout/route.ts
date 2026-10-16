@@ -9,6 +9,7 @@ import { generateOrderNumber, logOrderEvent } from '@/lib/orders';
 import { configuredGateways, getProvider, resolveGatewayForCurrency, PaymentError } from '@/lib/payments';
 import { quoteShippingForCart, findSelectedRate } from '@/lib/shipping/quote';
 import { asCartLines } from '@/lib/cartTypes';
+import { isManualMethod, METHOD_LABEL, type ManualMethod } from '@/lib/paymentMethods';
 
 export async function POST(req: NextRequest) {
   const supabase = await supabaseServerClient();
@@ -26,9 +27,10 @@ export async function POST(req: NextRequest) {
     shippingAddressId: string;
     billingAddressId: string;
     currency: string;
-    // 'agent' = no online payment: the order is placed and the customer's
-    // regional agent arranges bank transfer / Western Union on WhatsApp.
-    gateway?: 'stripe' | 'flutterwave' | 'grey' | 'paystack' | 'agent';
+    // 'bank_transfer' / 'western_union' = no online payment: the order is
+    // placed and the customer's regional agent arranges payment on WhatsApp.
+    // ('agent' is the older name for bank transfer.)
+    gateway?: 'stripe' | 'flutterwave' | 'grey' | 'paystack' | 'agent' | ManualMethod;
     shippingCarrier?: string;
     shippingService?: string;
     shippingRateId?: string;
@@ -43,8 +45,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 });
   }
 
-  const isAgentPayment = requestedGateway === 'agent';
-  const gateway = isAgentPayment ? null : (requestedGateway ?? resolveGatewayForCurrency(currency));
+  const manualMethod: ManualMethod | null = requestedGateway === 'agent'
+    ? 'bank_transfer'
+    : isManualMethod(requestedGateway) ? requestedGateway : null;
+  const isAgentPayment = manualMethod !== null;
+  const gateway = isAgentPayment
+    ? null
+    : ((requestedGateway as 'stripe' | 'flutterwave' | 'grey' | 'paystack' | undefined) ?? resolveGatewayForCurrency(currency));
   if (gateway) {
     if (!configuredGateways().includes(gateway)) {
       return NextResponse.json(
@@ -172,6 +179,7 @@ export async function POST(req: NextRequest) {
       // Only set for guests, so registered checkout keeps working even
       // before migration 014 has been run.
       ...(isGuest ? { contact_email: customerEmail } : {}),
+      ...(manualMethod ? { payment_method: manualMethod } : {}),
     })
     .select()
     .single();
@@ -198,7 +206,7 @@ export async function POST(req: NextRequest) {
   await logOrderEvent(
     order.id, 'created',
     `Order placed via ${isGuest ? 'guest ' : ''}checkout, currency ${currency}`
-      + (isAgentPayment ? ' — awaiting bank transfer / Western Union arranged by regional agent' : ''),
+      + (manualMethod ? ` — awaiting ${METHOD_LABEL[manualMethod]} arranged by regional agent` : ''),
     user.id,
   );
 

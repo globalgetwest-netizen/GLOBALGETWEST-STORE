@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { requireAdmin } from '@/lib/admin/guard';
 import { formatUsd } from '@/lib/catalog';
 import { OrderDetailPanel } from '@/components/admin/OrderDetailPanel';
+import { isManualMethod, METHOD_LABEL, type ManualMethod } from '@/lib/paymentMethods';
 
 export default async function AdminOrderDetailPage({
   params,
@@ -54,6 +55,9 @@ export default async function AdminOrderDetailPage({
       <p className="text-[var(--color-ink-soft)] text-sm mb-8">
         Placed {new Date(order.created_at).toLocaleString()} by {customer?.full_name ?? 'customer'}
         {order.contact_email && <> · guest checkout · {order.contact_email}</>}
+        {isManualMethod(order.payment_method) && (
+          <> · <strong className="text-[var(--color-ink)]">pays by {METHOD_LABEL[order.payment_method as ManualMethod]}</strong></>
+        )}
       </p>
 
       <div className="grid md:grid-cols-3 gap-8">

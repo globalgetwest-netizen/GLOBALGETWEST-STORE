@@ -5,6 +5,7 @@ import { COUNTRIES, currencyForCountry, localCurrencyForCountry } from '@/lib/co
 import { formatMoney, formatUsd } from '@/lib/format';
 import type { ShippingRateOption } from '@/lib/shipping/types';
 import { SUPPORT_EMAIL, contactForCountry } from '@/lib/contact';
+import { isManualMethod, methodSummary, paymentSteps, type ManualMethod } from '@/lib/paymentMethods';
 import { ContactAgentButton } from '@/components/ContactAgentButton';
 
 export interface CheckoutLineItem {
@@ -49,7 +50,7 @@ export function CheckoutFlow({
   });
   const [rates, setRates] = useState<ShippingRateOption[] | null>(null);
   const [selectedRate, setSelectedRate] = useState<ShippingRateOption | null>(null);
-  const [chosenGateway, setGateway] = useState<GatewayId | 'agent' | null>(null);
+  const [chosenGateway, setGateway] = useState<GatewayId | ManualMethod | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -57,16 +58,13 @@ export function CheckoutFlow({
   const availableGateways = (GATEWAYS_BY_CURRENCY[currency] ?? GATEWAYS_BY_CURRENCY.USD)
     .filter((g) => enabledGateways.includes(g.id));
 
-  // Online methods first, then agent-assisted bank transfer / Western Union,
-  // which is always available so every country can complete an order.
+  // Online methods first, then agent-assisted bank transfer and Western
+  // Union, which are always available so every country can complete an order.
   const contact = contactForCountry(address.countryCode);
-  const paymentOptions: { id: GatewayId | 'agent'; label: string; detail: string }[] = [
+  const paymentOptions: { id: GatewayId | ManualMethod; label: string; detail: string }[] = [
     ...availableGateways,
-    {
-      id: 'agent',
-      label: 'Bank transfer or Western Union',
-      detail: `Place your order now. Your ${contact.label} agent sends payment details on WhatsApp.`,
-    },
+    { id: 'bank_transfer', label: 'Bank transfer', detail: methodSummary('bank_transfer', contact.label, contact.private) },
+    { id: 'western_union', label: 'Western Union', detail: methodSummary('western_union', contact.label, contact.private) },
   ];
 
   // Always submit an option that's valid for the current country — a stale
@@ -74,7 +72,7 @@ export function CheckoutFlow({
   const gateway = paymentOptions.some((g) => g.id === chosenGateway)
     ? chosenGateway!
     : paymentOptions[0].id;
-  const isAgent = gateway === 'agent';
+  const isAgent = isManualMethod(gateway);
 
   async function fetchRates() {
     setLoading(true);
@@ -147,6 +145,13 @@ export function CheckoutFlow({
   const totalLabel = currency === 'USD' || chargeTotal === null
     ? formatUsd(total)
     : formatMoney(chargeTotal, currency);
+  const previewSteps = isManualMethod(gateway)
+    ? paymentSteps(gateway, {
+      amount: totalLabel,
+      reference: 'your order number',
+      contactName: gateway === 'western_union' && contact.private ? 'Our Western Union desk' : `Your ${contact.label} agent`,
+    })
+    : [];
 
   const country = COUNTRIES.find((c) => c.code === address.countryCode)?.name ?? address.countryCode;
   const setField = (key: keyof typeof address) => (v: string) => {
@@ -256,11 +261,19 @@ export function CheckoutFlow({
           </div>
 
           {isAgent && (
-            <ol className="mt-4 rounded-md bg-[var(--color-parchment-warm)] border border-[var(--color-border)] px-5 py-4 text-sm space-y-1.5 list-decimal list-inside text-[var(--color-ink-soft)]">
-              <li><span className="text-[var(--color-ink)]">Place your order</span> — we reserve your items and give you an order number.</li>
-              <li><span className="text-[var(--color-ink)]">Your agent messages you</span> on WhatsApp with bank or Western Union details.</li>
-              <li><span className="text-[var(--color-ink)]">We ship</span> as soon as your payment is confirmed.</li>
-            </ol>
+            <div className="mt-4 rounded-md bg-[var(--color-parchment-warm)] border border-[var(--color-border)] px-5 py-4 text-sm">
+              <p className="text-[var(--color-ink-soft)] mb-3">
+                Place your order now to reserve your items. You&apos;ll get an order number and full instructions:
+              </p>
+              <ol className="space-y-1.5">
+                {previewSteps.map((s, i) => (
+                  <li key={s.title} className="flex gap-2.5">
+                    <span className="w-5 h-5 shrink-0 rounded-full bg-[var(--color-charcoal)] text-white text-[11px] font-semibold inline-flex items-center justify-center">{i + 1}</span>
+                    <span className="text-[var(--color-ink)]">{s.title}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
           )}
 
           <button
