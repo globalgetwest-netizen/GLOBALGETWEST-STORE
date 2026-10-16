@@ -1,28 +1,12 @@
 // lib/contact.ts
 export const SUPPORT_EMAIL = 'support@globalgetwest.com';
 
-// Three regional contacts for manual payment arrangement (bank transfer /
-// Western Union) — this is deliberately separate from the real payment
-// gateways (Paystack/Grey/etc.), which are untouched. This is an
-// additional manual option, not a replacement.
-export interface AgentContact {
-  label: string;
-  phone: string;
-  whatsapp: string;
-  /** True for the Africa agent: the number isn't shipped to the browser
-   * (empty here) and is loaded only when a visitor clicks — see
-   * lib/contactPrivate.ts and /api/agent-contact. */
-  private: boolean;
-}
-
-export const CONTACTS: Record<'usEurope' | 'africa' | 'asia', AgentContact> = {
-  usEurope: { phone: '+16465733609', whatsapp: '16465733609', label: 'USA & Europe', private: false },
-  africa: { phone: '', whatsapp: '', label: 'Africa', private: true },
-  asia: { phone: '+971600337701', whatsapp: '971600337701', label: 'Asia', private: false },
-};
-
+// Regional agents for manual payment (bank transfer / Western Union) and
+// questions — separate from the online gateways (Paystack etc.). Every
+// number is shown openly; `display` is the human-friendly format.
 export interface AgentNumber {
   phone: string;
+  display: string;
   whatsapp: string;
   /** What this agent handles, e.g. 'Western Union' — shown next to the number. */
   role?: string;
@@ -30,17 +14,42 @@ export interface AgentNumber {
   callable?: boolean;
 }
 
-export function telLink(phone: string): string {
-  return `tel:${phone.replace(/[^+\d]/g, '')}`;
+export interface AgentContact {
+  label: string;
+  /** Main agent for the region (first in `agents`). */
+  phone: string;
+  display: string;
+  whatsapp: string;
+  agents: AgentNumber[];
 }
 
-/** Fetch the private (Africa) agents' numbers on demand, in the browser. */
-export async function loadPrivateContactNumbers(): Promise<AgentNumber[]> {
-  const res = await fetch('/api/agent-contact', { cache: 'no-store' });
-  if (!res.ok) throw new Error('Could not load contact');
-  const data = (await res.json()) as { agents?: AgentNumber[] };
-  if (!data.agents?.length) throw new Error('No agent available');
-  return data.agents;
+const US_EUROPE_AGENT: AgentNumber = { phone: '+16465733609', display: '+1 646 573 3609', whatsapp: '16465733609' };
+const ASIA_AGENT: AgentNumber = { phone: '+971600337701', display: '+971 600 337 701', whatsapp: '971600337701' };
+// Both serve every African country: agent 1 for orders and bank transfer,
+// agent 2 is the Western Union desk (phone call as well as WhatsApp).
+const AFRICA_AGENTS: AgentNumber[] = [
+  { phone: '+233599086351', display: '+233 59 908 6351', whatsapp: '233599086351', role: 'Orders & bank transfer' },
+  { phone: '+233246590317', display: '+233 24 659 0317', whatsapp: '233246590317', role: 'Western Union', callable: true },
+];
+
+function region(label: string, agents: AgentNumber[]): AgentContact {
+  const main = agents[0];
+  return { label, phone: main.phone, display: main.display, whatsapp: main.whatsapp, agents };
+}
+
+export const CONTACTS: Record<'usEurope' | 'africa' | 'asia', AgentContact> = {
+  usEurope: region('USA & Europe', [US_EUROPE_AGENT]),
+  africa: region('Africa', AFRICA_AGENTS),
+  asia: region('Asia', [ASIA_AGENT]),
+};
+
+/** The region's dedicated Western Union desk, if it has one (Africa does). */
+export function westernUnionDesk(contact: AgentContact): AgentNumber | undefined {
+  return contact.agents.find((a) => a.role === 'Western Union');
+}
+
+export function telLink(phone: string): string {
+  return `tel:${phone.replace(/[^+\d]/g, '')}`;
 }
 
 // North America + Europe route to the US/Europe contact. Africa and Asia

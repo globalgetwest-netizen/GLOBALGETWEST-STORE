@@ -1,59 +1,17 @@
-'use client';
 // components/ContactAgentButton.tsx
-import { useState } from 'react';
+// A region's agents as WhatsApp links (plus a Call link where offered),
+// each with its role and a readable number, e.g.
+//   ● (WhatsApp) Africa · Western Union: +233 24 659 0317   [Call]
 import { WhatsAppIcon } from '@/components/WhatsAppIcon';
-import { loadPrivateContactNumbers, telLink, whatsappLink, type AgentNumber } from '@/lib/contact';
+import { telLink, whatsappLink, type AgentNumber } from '@/lib/contact';
 
-interface Props {
+export function ContactAgentButton({
+  label, agents, message,
+}: {
   label: string;
-  /** Empty for the private (Africa) contact — loaded on click instead. */
-  phone: string;
-  whatsappNumber: string;
+  agents: AgentNumber[];
   message: string;
-  /** If true, the number shows right away (used for the non-sensitive
-   * contacts). If false, nothing about the number renders until the user
-   * clicks; for the private contact it isn't even in the page or the
-   * JavaScript until then. */
-  revealImmediately?: boolean;
-}
-
-export function ContactAgentButton({ label, phone, whatsappNumber, message, revealImmediately = false }: Props) {
-  const [revealed, setRevealed] = useState(revealImmediately);
-  const [agents, setAgents] = useState<AgentNumber[]>(whatsappNumber ? [{ phone, whatsapp: whatsappNumber }] : []);
-  const [loading, setLoading] = useState(false);
-  const [failed, setFailed] = useState(false);
-
-  async function reveal() {
-    if (agents.length) {
-      setRevealed(true);
-      return;
-    }
-    setLoading(true);
-    setFailed(false);
-    try {
-      setAgents(await loadPrivateContactNumbers());
-      setRevealed(true);
-    } catch {
-      setFailed(true);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (!revealed || !agents.length) {
-    return (
-      <button
-        onClick={reveal}
-        disabled={loading}
-        className="focus-ring flex items-center gap-2 text-sm hover:text-[var(--color-forest)] hover:underline disabled:opacity-60"
-      >
-        <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 shrink-0" aria-label="Active" />
-        <WhatsAppIcon size={16} />
-        {loading ? 'Connecting…' : failed ? `Try again — ${label}` : `Chat with Agent — ${label}`}
-      </button>
-    );
-  }
-
+}) {
   return (
     <div className="space-y-2">
       {agents.map((agent) => (
@@ -70,7 +28,7 @@ export function ContactAgentButton({ label, phone, whatsappNumber, message, reve
               className="hover:text-[var(--color-forest)] hover:underline"
             >
               {agent.role ? `${label} · ${agent.role}` : label}:{' '}
-              <span className="whitespace-nowrap">{agent.phone}</span>
+              <span className="whitespace-nowrap">{agent.display}</span>
             </a>
             {agent.callable && (
               <a
