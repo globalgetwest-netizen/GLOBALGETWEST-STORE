@@ -5,11 +5,28 @@ export const SUPPORT_EMAIL = 'support@globalgetwest.com';
 // Western Union) — this is deliberately separate from the real payment
 // gateways (Paystack/Grey/etc.), which are untouched. This is an
 // additional manual option, not a replacement.
-export const CONTACTS = {
-  usEurope: { phone: '+16465733609', whatsapp: '16465733609', label: 'USA & Europe' },
-  africa: { phone: '+233599086351', whatsapp: '233599086351', label: 'Africa' },
-  asia: { phone: '+971600337701', whatsapp: '971600337701', label: 'Asia' },
+export interface AgentContact {
+  label: string;
+  phone: string;
+  whatsapp: string;
+  /** True for the Africa agent: the number isn't shipped to the browser
+   * (empty here) and is loaded only when a visitor clicks — see
+   * lib/contactPrivate.ts and /api/agent-contact. */
+  private: boolean;
+}
+
+export const CONTACTS: Record<'usEurope' | 'africa' | 'asia', AgentContact> = {
+  usEurope: { phone: '+16465733609', whatsapp: '16465733609', label: 'USA & Europe', private: false },
+  africa: { phone: '', whatsapp: '', label: 'Africa', private: true },
+  asia: { phone: '+971600337701', whatsapp: '971600337701', label: 'Asia', private: false },
 };
+
+/** Fetch the private (Africa) agent number on demand, in the browser. */
+export async function loadPrivateContactNumber(): Promise<{ phone: string; whatsapp: string }> {
+  const res = await fetch('/api/agent-contact', { cache: 'no-store' });
+  if (!res.ok) throw new Error('Could not load contact');
+  return res.json();
+}
 
 // North America + Europe route to the US/Europe contact. Africa and Asia
 // are now split into their own separate contacts (previously combined into
@@ -44,7 +61,7 @@ const ASIA_COUNTRIES = new Set([
 
 const OCEANIA_COUNTRIES = new Set(['AU', 'NZ', 'FJ', 'PG', 'SB', 'VU', 'WS', 'TO', 'KI', 'NR']);
 
-export function contactForCountry(countryCode: string) {
+export function contactForCountry(countryCode: string): AgentContact {
   if (US_EUROPE_COUNTRIES.has(countryCode)) return CONTACTS.usEurope;
   if (AFRICA_COUNTRIES.has(countryCode)) return CONTACTS.africa;
   if (ASIA_COUNTRIES.has(countryCode)) return CONTACTS.asia;

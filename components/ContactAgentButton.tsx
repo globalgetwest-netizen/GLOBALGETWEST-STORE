@@ -2,31 +2,54 @@
 // components/ContactAgentButton.tsx
 import { useState } from 'react';
 import { WhatsAppIcon } from '@/components/WhatsAppIcon';
-import { whatsappLink } from '@/lib/contact';
+import { loadPrivateContactNumber, whatsappLink } from '@/lib/contact';
 
 interface Props {
   label: string;
+  /** Empty for the private (Africa) contact — loaded on click instead. */
   phone: string;
   whatsappNumber: string;
   message: string;
   /** If true, the number shows right away (used for the non-sensitive
-   * contact). If false, nothing about the number renders until the user
-   * clicks — it isn't in the page's initial HTML/DOM at all until then. */
+   * contacts). If false, nothing about the number renders until the user
+   * clicks; for the private contact it isn't even in the page or the
+   * JavaScript until then. */
   revealImmediately?: boolean;
 }
 
 export function ContactAgentButton({ label, phone, whatsappNumber, message, revealImmediately = false }: Props) {
   const [revealed, setRevealed] = useState(revealImmediately);
+  const [number, setNumber] = useState({ phone, whatsapp: whatsappNumber });
+  const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
 
-  if (!revealed) {
+  async function reveal() {
+    if (number.whatsapp) {
+      setRevealed(true);
+      return;
+    }
+    setLoading(true);
+    setFailed(false);
+    try {
+      setNumber(await loadPrivateContactNumber());
+      setRevealed(true);
+    } catch {
+      setFailed(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!revealed || !number.whatsapp) {
     return (
       <button
-        onClick={() => setRevealed(true)}
-        className="focus-ring flex items-center gap-2 text-sm hover:text-[var(--color-forest)] hover:underline"
+        onClick={reveal}
+        disabled={loading}
+        className="focus-ring flex items-center gap-2 text-sm hover:text-[var(--color-forest)] hover:underline disabled:opacity-60"
       >
         <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 shrink-0" aria-label="Active" />
         <WhatsAppIcon size={16} />
-        Chat with Agent — {label}
+        {loading ? 'Connecting…' : failed ? `Try again — ${label}` : `Chat with Agent — ${label}`}
       </button>
     );
   }
@@ -36,12 +59,12 @@ export function ContactAgentButton({ label, phone, whatsappNumber, message, reve
       <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 shrink-0" aria-label="Active" />
       <WhatsAppIcon size={16} />
       <a
-        href={whatsappLink(whatsappNumber, message)}
+        href={whatsappLink(number.whatsapp, message)}
         target="_blank"
         rel="noopener noreferrer"
         className="hover:text-[var(--color-forest)] hover:underline"
       >
-        {label}: {phone}
+        {label}: {number.phone}
       </a>
     </div>
   );
