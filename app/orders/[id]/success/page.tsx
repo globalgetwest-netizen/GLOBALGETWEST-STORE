@@ -98,9 +98,9 @@ export default async function OrderSuccessPage({
           </div>
         )}
         {order.contact_email && (
-          <div className="flex justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-0.5 sm:gap-4">
             <span className="text-[var(--color-ink-soft)] whitespace-nowrap">Receipt sent to</span>
-            <span className="text-right break-all">{order.contact_email}</span>
+            <span className="sm:text-right [overflow-wrap:anywhere]">{order.contact_email}</span>
           </div>
         )}
       </div>

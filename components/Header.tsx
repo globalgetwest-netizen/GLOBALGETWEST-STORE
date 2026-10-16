@@ -80,7 +80,7 @@ export async function Header() {
           </nav>
         </div>
 
-        <nav className="flex gap-5 h-10 items-center text-[13px] border-t border-[var(--color-border)] overflow-x-auto">
+        <nav className="flex gap-5 h-10 items-center text-[13px] border-t border-[var(--color-border)] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Link href="/products" className="focus-ring whitespace-nowrap text-[var(--color-ink-soft)] hover:text-[var(--color-forest)]">
             All Products
           </Link>
