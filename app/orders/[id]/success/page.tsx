@@ -6,7 +6,8 @@ import { formatMoney } from '@/lib/format';
 import { getOrderCharge, PAID_STATUSES } from '@/lib/orderCharge';
 import { SaveGuestDetails } from '@/components/SaveGuestDetails';
 import { RefreshWhilePending } from '@/components/RefreshWhilePending';
-import { WhatsAppAction } from '@/components/WhatsAppAction';
+import { PaymentDetailsCard } from '@/components/PaymentDetailsCard';
+import { isManualMethod } from '@/lib/paymentMethods';
 import { contactForCountry } from '@/lib/contact';
 
 export default async function OrderSuccessPage({
@@ -74,7 +75,7 @@ export default async function OrderSuccessPage({
           {paid
             ? "Your payment is confirmed. We'll email you tracking details as soon as your order ships."
             : isAgentOrder
-              ? `Your ${contact.label} agent will message you on WhatsApp with payment details. You can also message them now.`
+              ? `Complete your ${isManualMethod(order.payment_method) && order.payment_method === 'western_union' ? 'Western Union' : 'bank transfer'} payment using the details below. Your items are held for you.`
               : closed
               ? 'If you think this is a mistake, contact support with your order number.'
               : "This usually takes a few seconds and the page will update by itself. If you paid and it doesn't change within a few minutes, contact support with your order number."}
@@ -105,56 +106,12 @@ export default async function OrderSuccessPage({
       </div>
 
       {isAgentOrder && (
-        <div className="mt-6 rounded-lg border border-[var(--color-border)] bg-white p-6 text-sm">
-          <p className="font-display text-lg mb-3">How to complete payment</p>
-          <ol className="space-y-1.5 list-decimal list-inside text-[var(--color-ink-soft)] mb-6">
-            <li>Get our bank or Western Union details from your {contact.label} agent on WhatsApp.</li>
-            <li>
-              Pay <strong className="text-[var(--color-ink)]">{amountLabel}</strong> using{' '}
-              <strong className="text-[var(--color-ink)]">{order.order_number}</strong> as the payment reference.
-            </li>
-            <li>Send a photo of your bank slip or Western Union receipt to your agent.</li>
-            <li>We confirm your payment, send your receipt and ship your order.</li>
-          </ol>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <WhatsAppAction
-              whatsappNumber={contact.whatsapp}
-              label="Get payment details"
-              message={`Hello, I've placed order ${order.order_number} for ${amountLabel} and would like to pay by bank transfer or Western Union. Please send me the payment details.`}
-            />
-            <WhatsAppAction
-              whatsappNumber={contact.whatsapp}
-              variant="secondary"
-              label="Send payment proof"
-              message={`Hello, I've paid ${amountLabel} for order ${order.order_number}. My proof of payment is attached.`}
-            />
-          </div>
-          {contact.private && (
-            <div className="mt-5 pt-5 border-t border-[var(--color-border)]">
-              <p className="font-medium mb-1">Paying by Western Union?</p>
-              <p className="text-[var(--color-ink-soft)] mb-3">
-                Our Africa Western Union desk can guide you by phone or WhatsApp.
-              </p>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <WhatsAppAction
-                  whatsappNumber=""
-                  agentIndex={1}
-                  call
-                  variant="secondary"
-                  label="Call Western Union desk"
-                  message=""
-                />
-                <WhatsAppAction
-                  whatsappNumber=""
-                  agentIndex={1}
-                  variant="secondary"
-                  label="WhatsApp Western Union desk"
-                  message={`Hello, I'd like to pay ${amountLabel} for order ${order.order_number} by Western Union. Please send me the details.`}
-                />
-              </div>
-            </div>
-          )}
-        </div>
+        <PaymentDetailsCard
+          method={isManualMethod(order.payment_method) ? order.payment_method : 'bank_transfer'}
+          amountLabel={amountLabel}
+          reference={order.order_number}
+          contact={contact}
+        />
       )}
 
       <div className="mt-6 text-center">

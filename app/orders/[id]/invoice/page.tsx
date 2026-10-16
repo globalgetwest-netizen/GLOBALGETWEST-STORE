@@ -15,6 +15,7 @@ import { COUNTRIES } from '@/lib/countries';
 import { SUPPORT_EMAIL, contactForCountry } from '@/lib/contact';
 import { withPrivateNumber } from '@/lib/contactPrivate';
 import { PrintButton } from '@/components/PrintButton';
+import { isManualMethod, METHOD_LABEL, methodNote, paymentSteps, type ManualMethod } from '@/lib/paymentMethods';
 
 export const metadata: Metadata = {
   title: 'Invoice — GLOBALGETWEST',
@@ -79,6 +80,12 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
   // The invoice is the customer's own document, so it prints their
   // agent's number in full — including the Africa agent's.
   const contact = withPrivateNumber(contactForCountry(order.shipping_country_code ?? address?.country_code ?? ''));
+  const method: ManualMethod = isManualMethod(order.payment_method) ? order.payment_method : 'bank_transfer';
+  const wuDesk = method === 'western_union' ? contact.agents.find((a) => a.role === 'Western Union') : undefined;
+  const stepContactName = wuDesk ? 'Our Western Union desk' : `Your ${contact.label} agent`;
+  const invoiceContacts = wuDesk
+    ? [{ name: 'Western Union desk', phone: wuDesk.phone, how: 'call or WhatsApp' }]
+    : [{ name: `${contact.label} agent`, phone: contact.phone, how: 'WhatsApp' }];
 
   return (
     <div className="mx-auto max-w-[860px] px-4 py-10 print:p-0 print:max-w-none">
@@ -204,24 +211,49 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
                 your invoice number.
               </p>
             ) : (
-              <ol className="space-y-2 list-decimal list-inside text-[var(--color-ink-soft)]">
-                <li>
-                  Your <span className="text-[var(--color-ink)]">{contact.label}</span> agent sends our bank or Western Union
-                  details on WhatsApp ({contact.phone}).
-                  {contact.agents.filter((a) => a.role === 'Western Union').map((a) => (
-                    <span key={a.phone}>
-                      {' '}For Western Union you can also call or WhatsApp our Western Union desk on{' '}
-                      <span className="text-[var(--color-ink)] whitespace-nowrap">{a.phone}</span>.
-                    </span>
+              <>
+                <div className="grid sm:grid-cols-3 gap-4 mb-5">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-muted)] mb-1">Method</p>
+                    <p className="font-medium">{METHOD_LABEL[method]}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-muted)] mb-1">Amount due</p>
+                    <p className="font-semibold tabular-nums">{totalLabel}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-muted)] mb-1">
+                      {method === 'western_union' ? 'Your reference' : 'Payment reference'}
+                    </p>
+                    <p className="font-semibold">{order.order_number}</p>
+                  </div>
+                </div>
+                <ol className="space-y-3">
+                  {paymentSteps(method, { amount: totalLabel, reference: order.order_number, contactName: stepContactName }).map((step, i) => (
+                    <li key={step.title} className="flex gap-3">
+                      <span className="w-5 h-5 shrink-0 rounded-full border border-[var(--color-ink)] text-[11px] font-semibold inline-flex items-center justify-center">
+                        {i + 1}
+                      </span>
+                      <div>
+                        <p className="font-medium">{step.title}</p>
+                        <p className="text-[var(--color-ink-soft)]">{step.body}</p>
+                      </div>
+                    </li>
                   ))}
-                </li>
-                <li>
-                  Pay <span className="text-[var(--color-ink)] font-semibold">{totalLabel}</span> and use{' '}
-                  <span className="text-[var(--color-ink)] font-semibold">{order.order_number}</span> as the payment reference.
-                </li>
-                <li>Send a photo of your bank slip or Western Union receipt to your agent on WhatsApp.</li>
-                <li>We confirm your payment, send your receipt and ship your order.</li>
-              </ol>
+                </ol>
+                <div className="mt-5 pt-4 border-t border-[var(--color-border)]">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-muted)] mb-2">Official contacts</p>
+                  <ul className="space-y-1">
+                    {invoiceContacts.map((c) => (
+                      <li key={c.phone} className="flex flex-wrap justify-between gap-x-4">
+                        <span className="text-[var(--color-ink-soft)]">{c.name}</span>
+                        <span className="font-medium whitespace-nowrap">{c.phone} · {c.how}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-3 text-[11px] text-[var(--color-ink-muted)]">{methodNote(method)}</p>
+                </div>
+              </>
             )}
           </section>
         )}
