@@ -5,6 +5,8 @@ import { supabaseServerClient } from '@/lib/supabase/server';
 import { formatMoney, formatUsd } from '@/lib/format';
 import { SaveGuestDetails } from '@/components/SaveGuestDetails';
 import { RefreshWhilePending } from '@/components/RefreshWhilePending';
+import { ContactAgentButton } from '@/components/ContactAgentButton';
+import { CONTACTS, contactForCountry } from '@/lib/contact';
 
 export default async function OrderSuccessPage({
   params,
@@ -34,9 +36,25 @@ export default async function OrderSuccessPage({
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
-  const amountLabel = payment && payment.currency !== 'USD'
-    ? formatMoney(Number(payment.amount_minor_units), payment.currency)
-    : formatUsd(order.total_usd_cents);
+  // No payment attempt on a pending order = the customer chose bank transfer
+  // / Western Union, arranged by their regional agent on WhatsApp.
+  const isAgentOrder = !payment && order.status === 'pending_payment';
+
+  let amountLabel = formatUsd(order.total_usd_cents);
+  if (payment && payment.currency !== 'USD') {
+    amountLabel = formatMoney(Number(payment.amount_minor_units), payment.currency);
+  } else if (isAgentOrder && order.currency !== 'USD') {
+    const { data: fx } = await supabase
+      .from('fx_rates')
+      .select('rate')
+      .eq('base_currency', 'USD')
+      .eq('quote_currency', order.currency)
+      .order('effective_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (fx) amountLabel = formatMoney(Math.round(order.total_usd_cents * Number(fx.rate)), order.currency);
+  }
+  const contact = contactForCountry(order.shipping_country_code ?? '');
 
   // Only these statuses mean money was actually received — 'cancelled' and
   // 'refunded' must not show a thank-you as if the order went through.
@@ -45,15 +63,15 @@ export default async function OrderSuccessPage({
 
   return (
     <div className="mx-auto max-w-xl px-4 py-20">
-      {!paid && !closed && <RefreshWhilePending />}
+      {!paid && !closed && !isAgentOrder && <RefreshWhilePending />}
       <div className="text-center">
         <div
           className={`mx-auto mb-6 w-14 h-14 rounded-full inline-flex items-center justify-center ${
-            paid ? 'bg-[var(--color-forest)] text-white' : 'bg-[var(--color-parchment-warm)] border border-[var(--color-border)] text-[var(--color-ink-soft)]'
+            paid || isAgentOrder ? 'bg-[var(--color-forest)] text-white' : 'bg-[var(--color-parchment-warm)] border border-[var(--color-border)] text-[var(--color-ink-soft)]'
           }`}
           aria-hidden="true"
         >
-          {paid ? (
+          {paid || isAgentOrder ? (
             <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
           ) : closed ? (
             <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6L6 18" /></svg>
@@ -65,12 +83,18 @@ export default async function OrderSuccessPage({
           Order {order.order_number}
         </p>
         <h1 className="font-display text-4xl mb-3">
-          {paid ? 'Thank you for your order' : closed ? `This order was ${order.status}` : 'Confirming your payment'}
+          {paid
+            ? 'Thank you for your order'
+            : isAgentOrder
+              ? 'Your order is reserved'
+              : closed ? `This order was ${order.status}` : 'Confirming your payment'}
         </h1>
         <p className="text-[var(--color-ink-soft)]">
           {paid
             ? "Your payment is confirmed. We'll email you tracking details as soon as your order ships."
-            : closed
+            : isAgentOrder
+              ? `Your ${contact.label} agent will message you on WhatsApp with payment details. You can also message them now.`
+              : closed
               ? 'If you think this is a mistake, contact support with your order number.'
               : "This usually takes a few seconds and the page will update by itself. If you paid and it doesn't change within a few minutes, contact support with your order number."}
         </p>
@@ -98,6 +122,24 @@ export default async function OrderSuccessPage({
           </div>
         )}
       </div>
+
+      {isAgentOrder && (
+        <div className="mt-6 rounded-lg border border-[var(--color-border)] bg-white p-6 text-sm">
+          <p className="font-medium mb-3">How to complete payment</p>
+          <ol className="space-y-1.5 list-decimal list-inside text-[var(--color-ink-soft)] mb-5">
+            <li>Message your agent with your order number <strong className="text-[var(--color-ink)]">{order.order_number}</strong>.</li>
+            <li>Pay {amountLabel} by bank transfer or Western Union using the details they send.</li>
+            <li>We confirm your payment and ship your order.</li>
+          </ol>
+          <ContactAgentButton
+            label={contact.label}
+            phone={contact.phone}
+            whatsappNumber={contact.whatsapp}
+            message={`Hi, I've placed order ${order.order_number} (${amountLabel}) and would like to pay by bank transfer or Western Union. Please send me the payment details.`}
+            revealImmediately={contact.label !== CONTACTS.africa.label}
+          />
+        </div>
+      )}
 
       {user?.is_anonymous && order.contact_email && paid && (
         <div className="mt-6">
