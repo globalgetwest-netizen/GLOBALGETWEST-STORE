@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { COUNTRIES, currencyForCountry, localCurrencyForCountry } from '@/lib/countries';
 import { formatMoney, formatUsd } from '@/lib/format';
 import type { ShippingRateOption } from '@/lib/shipping/types';
-import { SUPPORT_EMAIL, contactForCountry } from '@/lib/contact';
+import { SUPPORT_EMAIL, contactForCountry, westernUnionDesk } from '@/lib/contact';
 import { isManualMethod, methodSummary, paymentSteps, type ManualMethod } from '@/lib/paymentMethods';
 import { ContactAgentButton } from '@/components/ContactAgentButton';
 
@@ -63,8 +63,8 @@ export function CheckoutFlow({
   const contact = contactForCountry(address.countryCode);
   const paymentOptions: { id: GatewayId | ManualMethod; label: string; detail: string }[] = [
     ...availableGateways,
-    { id: 'bank_transfer', label: 'Bank transfer', detail: methodSummary('bank_transfer', contact.label, contact.private) },
-    { id: 'western_union', label: 'Western Union', detail: methodSummary('western_union', contact.label, contact.private) },
+    { id: 'bank_transfer', label: 'Bank transfer', detail: methodSummary('bank_transfer', contact.label, !!westernUnionDesk(contact)) },
+    { id: 'western_union', label: 'Western Union', detail: methodSummary('western_union', contact.label, !!westernUnionDesk(contact)) },
   ];
 
   // Always submit an option that's valid for the current country — a stale
@@ -149,7 +149,7 @@ export function CheckoutFlow({
     ? paymentSteps(gateway, {
       amount: totalLabel,
       reference: 'your order number',
-      contactName: gateway === 'western_union' && contact.private ? 'Our Western Union desk' : `Your ${contact.label} agent`,
+      contactName: gateway === 'western_union' && westernUnionDesk(contact) ? 'Our Western Union desk' : `Your ${contact.label} agent`,
     })
     : [];
 
@@ -304,10 +304,8 @@ export function CheckoutFlow({
             </p>
             <ContactAgentButton
               label={contact.label}
-              phone={contact.phone}
-              whatsappNumber={contact.whatsapp}
+              agents={contact.agents}
               message={`Hi, I'd like to arrange payment for an order.\n\nName: ${address.fullName}\nCountry: ${country}\nOrder total: ${totalLabel}\n\n(Please confirm the items with me.)`}
-              revealImmediately={!contact.private}
             />
           </div>
         </Section>

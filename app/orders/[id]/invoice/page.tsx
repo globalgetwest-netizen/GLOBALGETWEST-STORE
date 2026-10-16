@@ -12,8 +12,7 @@ import { supabaseServerClient } from '@/lib/supabase/server';
 import { formatMoney, formatUsd } from '@/lib/format';
 import { getOrderCharge, PAID_STATUSES } from '@/lib/orderCharge';
 import { COUNTRIES } from '@/lib/countries';
-import { SUPPORT_EMAIL, contactForCountry } from '@/lib/contact';
-import { withPrivateNumber } from '@/lib/contactPrivate';
+import { SUPPORT_EMAIL, contactForCountry, westernUnionDesk } from '@/lib/contact';
 import { PrintButton } from '@/components/PrintButton';
 import { isManualMethod, METHOD_LABEL, methodNote, paymentSteps, type ManualMethod } from '@/lib/paymentMethods';
 
@@ -79,13 +78,13 @@ export default async function InvoicePage({ params }: { params: Promise<{ id: st
   const country = COUNTRIES.find((c) => c.code === address?.country_code)?.name ?? address?.country_code ?? '';
   // The invoice is the customer's own document, so it prints their
   // agent's number in full — including the Africa agent's.
-  const contact = withPrivateNumber(contactForCountry(order.shipping_country_code ?? address?.country_code ?? ''));
+  const contact = contactForCountry(order.shipping_country_code ?? address?.country_code ?? '');
   const method: ManualMethod = isManualMethod(order.payment_method) ? order.payment_method : 'bank_transfer';
-  const wuDesk = method === 'western_union' ? contact.agents.find((a) => a.role === 'Western Union') : undefined;
+  const wuDesk = method === 'western_union' ? westernUnionDesk(contact) : undefined;
   const stepContactName = wuDesk ? 'Our Western Union desk' : `Your ${contact.label} agent`;
   const invoiceContacts = wuDesk
-    ? [{ name: 'Western Union desk', phone: wuDesk.phone, how: 'call or WhatsApp' }]
-    : [{ name: `${contact.label} agent`, phone: contact.phone, how: 'WhatsApp' }];
+    ? [{ name: 'Western Union desk', phone: wuDesk.display, how: 'call or WhatsApp' }]
+    : [{ name: `${contact.label} agent`, phone: contact.display, how: 'WhatsApp' }];
 
   return (
     <div className="mx-auto max-w-[860px] px-4 py-10 print:p-0 print:max-w-none">

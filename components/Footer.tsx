@@ -80,28 +80,21 @@ export async function Footer() {
             <li>
               <ContactAgentButton
                 label={CONTACTS.usEurope.label}
-                phone={CONTACTS.usEurope.phone}
-                whatsappNumber={CONTACTS.usEurope.whatsapp}
+                agents={CONTACTS.usEurope.agents}
                 message="Hi, I have a question about GLOBALGETWEST."
-                revealImmediately
               />
             </li>
             <li>
               <ContactAgentButton
                 label={CONTACTS.asia.label}
-                phone={CONTACTS.asia.phone}
-                whatsappNumber={CONTACTS.asia.whatsapp}
+                agents={CONTACTS.asia.agents}
                 message="Hi, I have a question about GLOBALGETWEST."
-                revealImmediately
               />
             </li>
             <li>
-              {/* Africa number is loaded only on click — it isn't in the
-                  page HTML or the site's JavaScript (see lib/contactPrivate). */}
               <ContactAgentButton
                 label={CONTACTS.africa.label}
-                phone={CONTACTS.africa.phone}
-                whatsappNumber={CONTACTS.africa.whatsapp}
+                agents={CONTACTS.africa.agents}
                 message="Hi, I have a question about GLOBALGETWEST."
               />
             </li>

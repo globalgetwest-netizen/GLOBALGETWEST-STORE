@@ -2,7 +2,7 @@
 // Order-page instructions for agent-assisted payment (bank transfer or
 // Western Union): amount, reference, step-by-step guide and the right
 // contact buttons. Server component; the buttons are small client islands.
-import type { AgentContact } from '@/lib/contact';
+import { westernUnionDesk, type AgentContact } from '@/lib/contact';
 import { METHOD_LABEL, methodNote, paymentSteps, type ManualMethod } from '@/lib/paymentMethods';
 import { CopyButton } from '@/components/CopyButton';
 import { WhatsAppAction } from '@/components/WhatsAppAction';
@@ -18,8 +18,9 @@ export function PaymentDetailsCard({
   const isWU = method === 'western_union';
   // Africa has a dedicated Western Union desk (agent 2, phone + WhatsApp);
   // everywhere else the regional agent handles both methods.
-  const useWUDesk = isWU && contact.private;
-  const agentIndex = useWUDesk ? 1 : 0;
+  const desk = isWU ? westernUnionDesk(contact) : undefined;
+  const useWUDesk = !!desk;
+  const target = desk ?? contact;
   const contactName = useWUDesk ? 'Our Western Union desk' : `Your ${contact.label} agent`;
   const steps = paymentSteps(method, { amount: amountLabel, reference, contactName });
 
@@ -76,21 +77,20 @@ export function PaymentDetailsCard({
       {/* Contact */}
       <div className="px-6 pb-5">
         <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-muted)] mb-2.5">
-          {useWUDesk ? 'Western Union desk · Africa' : `${contact.label} agent`}
+          {useWUDesk ? `Western Union desk · ${contact.label} · ${target.display}` : `${contact.label} agent · ${contact.display}`}
         </p>
         <div className="grid sm:grid-cols-2 gap-3">
           <div className={useWUDesk ? 'sm:col-span-2' : ''}>
             <WhatsAppAction
-              whatsappNumber={contact.whatsapp}
-              agentIndex={agentIndex}
+              whatsappNumber={target.whatsapp}
               label={isWU ? 'Get receiver details' : 'Get bank details'}
               message={detailsMessage}
             />
           </div>
           {useWUDesk && (
             <WhatsAppAction
-              whatsappNumber=""
-              agentIndex={1}
+              whatsappNumber={target.whatsapp}
+              phone={target.phone}
               call
               variant="secondary"
               label="Call the desk"
@@ -98,8 +98,7 @@ export function PaymentDetailsCard({
             />
           )}
           <WhatsAppAction
-            whatsappNumber={contact.whatsapp}
-            agentIndex={agentIndex}
+            whatsappNumber={target.whatsapp}
             variant="secondary"
             label={isWU ? 'Send your MTCN' : 'Send payment proof'}
             message={proofMessage}
