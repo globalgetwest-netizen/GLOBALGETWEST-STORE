@@ -31,10 +31,25 @@ const AFRICA_COUNTRIES = new Set([
   'TG', 'TN', 'UG', 'ZM', 'ZW',
 ]);
 
+// Asia (including the Middle East) and Oceania. Anywhere not in a named
+// region (Latin America, the Caribbean, Russia, …) is still served by the
+// Asia desk's number, but labelled "International" so a customer in, say,
+// Brazil or Australia isn't told to contact an "Asia" agent.
+const ASIA_COUNTRIES = new Set([
+  'AF', 'AM', 'AZ', 'BH', 'BD', 'BT', 'BN', 'KH', 'CN', 'GE', 'IN', 'ID',
+  'IR', 'IQ', 'IL', 'JP', 'JO', 'KZ', 'KW', 'KG', 'LA', 'LB', 'MY', 'MV',
+  'MN', 'MM', 'NP', 'OM', 'PK', 'PH', 'QA', 'SA', 'SG', 'KR', 'LK', 'TW',
+  'TJ', 'TH', 'TL', 'TR', 'TM', 'AE', 'UZ', 'VN', 'YE',
+]);
+
+const OCEANIA_COUNTRIES = new Set(['AU', 'NZ', 'FJ', 'PG', 'SB', 'VU', 'WS', 'TO', 'KI', 'NR']);
+
 export function contactForCountry(countryCode: string) {
   if (US_EUROPE_COUNTRIES.has(countryCode)) return CONTACTS.usEurope;
   if (AFRICA_COUNTRIES.has(countryCode)) return CONTACTS.africa;
-  return CONTACTS.asia;
+  if (ASIA_COUNTRIES.has(countryCode)) return CONTACTS.asia;
+  if (OCEANIA_COUNTRIES.has(countryCode)) return { ...CONTACTS.asia, label: 'Asia-Pacific' };
+  return { ...CONTACTS.asia, label: 'International' };
 }
 
 export function whatsappLink(whatsappNumber: string, message: string): string {
