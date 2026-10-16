@@ -57,26 +57,31 @@ export function ContactAgentButton({ label, phone, whatsappNumber, message, reve
   return (
     <div className="space-y-2">
       {agents.map((agent) => (
-        <div key={agent.whatsapp} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-          <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 shrink-0" aria-label="Active" />
-          <WhatsAppIcon size={16} />
-          <a
-            href={whatsappLink(agent.whatsapp, message)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-[var(--color-forest)] hover:underline"
-          >
-            {agent.role ? `${label} · ${agent.role}` : label}: {agent.phone}
-          </a>
-          {agent.callable && (
+        <div key={agent.whatsapp} className="flex items-start gap-2 text-sm">
+          <span className="flex items-center gap-2 shrink-0 h-5">
+            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" aria-label="Active" />
+            <WhatsAppIcon size={16} />
+          </span>
+          <div className="min-w-0">
             <a
-              href={telLink(agent.phone)}
-              className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] px-2 py-0.5 text-xs hover:border-[var(--color-forest)] hover:text-[var(--color-forest)]"
+              href={whatsappLink(agent.whatsapp, message)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[var(--color-forest)] hover:underline"
             >
-              <PhoneIcon />
-              Call
+              {agent.role ? `${label} · ${agent.role}` : label}:{' '}
+              <span className="whitespace-nowrap">{agent.phone}</span>
             </a>
-          )}
+            {agent.callable && (
+              <a
+                href={telLink(agent.phone)}
+                className="mt-1 flex w-fit items-center gap-1 rounded-full border border-[var(--color-border)] px-2 py-0.5 text-xs hover:border-[var(--color-forest)] hover:text-[var(--color-forest)]"
+              >
+                <PhoneIcon />
+                Call
+              </a>
+            )}
+          </div>
         </div>
       ))}
     </div>

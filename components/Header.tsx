@@ -33,13 +33,13 @@ export async function Header() {
   return (
     <header className="print:hidden sticky top-0 z-40 bg-white text-[var(--color-ink)] border-b border-[var(--color-border)]">
       <div className="mx-auto max-w-[1600px] px-4">
-        <div className="flex items-center gap-6 h-16">
+        <div className="flex flex-wrap md:flex-nowrap items-center gap-x-4 md:gap-x-6 gap-y-2.5 py-3 md:py-0 md:h-16">
           <Link href="/" className="focus-ring flex items-center gap-2.5 shrink-0">
             <Image src="/logo.png" alt="GLOBALGETWEST" width={36} height={36} className="rounded-full" priority />
             <span className="font-display text-xl tracking-tight text-[var(--color-ink)]">GLOBALGETWEST</span>
           </Link>
 
-          <form action="/search" className="flex-1 max-w-2xl">
+          <form action="/search" className="order-3 md:order-none basis-full md:basis-auto md:flex-1 max-w-2xl">
             <label htmlFor="site-search" className="sr-only">Search products</label>
             <input
               id="site-search"
@@ -50,7 +50,7 @@ export async function Header() {
             />
           </form>
 
-          <nav className="flex items-center gap-5 text-sm shrink-0">
+          <nav className="ml-auto md:ml-0 flex items-center gap-4 md:gap-5 text-sm shrink-0">
             {user && !user.is_anonymous ? (
               <>
                 <Link href="/account/orders" className="focus-ring text-[var(--color-ink-soft)] hover:text-[var(--color-forest)]">

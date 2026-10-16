@@ -78,13 +78,15 @@ export function PaymentDetailsCard({
         <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-muted)] mb-2.5">
           {useWUDesk ? 'Western Union desk · Africa' : `${contact.label} agent`}
         </p>
-        <div className={`grid gap-3 ${useWUDesk ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
-          <WhatsAppAction
-            whatsappNumber={contact.whatsapp}
-            agentIndex={agentIndex}
-            label={isWU ? 'Get receiver details' : 'Get bank details'}
-            message={detailsMessage}
-          />
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div className={useWUDesk ? 'sm:col-span-2' : ''}>
+            <WhatsAppAction
+              whatsappNumber={contact.whatsapp}
+              agentIndex={agentIndex}
+              label={isWU ? 'Get receiver details' : 'Get bank details'}
+              message={detailsMessage}
+            />
+          </div>
           {useWUDesk && (
             <WhatsAppAction
               whatsappNumber=""

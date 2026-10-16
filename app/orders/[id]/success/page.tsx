@@ -99,8 +99,8 @@ export default async function OrderSuccessPage({
         )}
         {order.contact_email && (
           <div className="flex justify-between gap-4">
-            <span className="text-[var(--color-ink-soft)]">Receipt sent to</span>
-            <span className="text-right truncate">{order.contact_email}</span>
+            <span className="text-[var(--color-ink-soft)] whitespace-nowrap">Receipt sent to</span>
+            <span className="text-right break-all">{order.contact_email}</span>
           </div>
         )}
       </div>
