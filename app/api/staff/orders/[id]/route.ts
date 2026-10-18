@@ -1,8 +1,9 @@
 // app/api/staff/orders/[id]/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { supabaseServerClient } from '@/lib/supabase/server';
 import { logOrderEvent } from '@/lib/orders';
 import { syncOrderStock } from '@/lib/inventory';
+import { emailForStatus, sendOrderEmail } from '@/lib/orderEmails';
 
 // Staff can only move an order through fulfilment states. They cannot set
 // 'paid' (that's payment-webhook-only), 'pending_payment', 'cancelled', or
@@ -40,6 +41,8 @@ export async function PATCH(
     const { error } = await supabase.from('orders').update({ status }).eq('id', id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     await logOrderEvent(id, 'status_changed', `Status set to ${status}`, user.id);
+    const emailKind = emailForStatus(status);
+    if (emailKind) after(() => sendOrderEmail(id, emailKind));
     if (status === 'shipped') {
       await logOrderEvent(id, 'shipped', undefined, user.id);
     }

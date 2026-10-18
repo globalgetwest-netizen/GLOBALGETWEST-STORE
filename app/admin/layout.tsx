@@ -31,6 +31,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <AdminNavLink href="/admin/patient-cases">Patient Records</AdminNavLink>
           <AdminNavLink href="/admin/practitioners">Practitioners</AdminNavLink>
           {isCeo && <AdminNavLink href="/admin/admins">Admin Accounts</AdminNavLink>}
+          {isCeo && <AdminNavLink href="/admin/backup">Data Backup</AdminNavLink>}
         </nav>
 
         <div className="pt-4 border-t border-white/10 text-xs text-[var(--color-parchment)]/70">

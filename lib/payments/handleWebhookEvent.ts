@@ -7,6 +7,7 @@
 import { supabaseServiceRole } from '../supabase/server';
 import { logOrderEvent } from '../orders';
 import { syncOrderStock } from '../inventory';
+import { sendOrderEmail } from '../orderEmails';
 import type { VerifiedPaymentEvent } from './types';
 
 export async function handleWebhookEvent(event: VerifiedPaymentEvent) {
@@ -73,4 +74,7 @@ export async function handleWebhookEvent(event: VerifiedPaymentEvent) {
   // Deduct stock once — shared with admin/staff status changes so an order
   // is never deducted twice (see lib/inventory.ts).
   await syncOrderStock(payment.order_id, 'paid');
+
+  // Never throws; does nothing until email is switched on.
+  await sendOrderEmail(payment.order_id, 'paid');
 }
