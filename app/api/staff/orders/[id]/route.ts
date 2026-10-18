@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServerClient } from '@/lib/supabase/server';
 import { logOrderEvent } from '@/lib/orders';
+import { syncOrderStock } from '@/lib/inventory';
 
 // Staff can only move an order through fulfilment states. They cannot set
 // 'paid' (that's payment-webhook-only), 'pending_payment', 'cancelled', or
@@ -41,6 +42,12 @@ export async function PATCH(
     await logOrderEvent(id, 'status_changed', `Status set to ${status}`, user.id);
     if (status === 'shipped') {
       await logOrderEvent(id, 'shipped', undefined, user.id);
+    }
+    // Moving an unpaid order straight into fulfilment also counts it as sold.
+    try {
+      await syncOrderStock(id, status, user.id);
+    } catch (err) {
+      console.error('Stock sync failed for order', id, err);
     }
   }
 

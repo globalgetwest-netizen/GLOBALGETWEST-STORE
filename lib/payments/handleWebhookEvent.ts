@@ -6,6 +6,7 @@
 
 import { supabaseServiceRole } from '../supabase/server';
 import { logOrderEvent } from '../orders';
+import { syncOrderStock } from '../inventory';
 import type { VerifiedPaymentEvent } from './types';
 
 export async function handleWebhookEvent(event: VerifiedPaymentEvent) {
@@ -69,19 +70,7 @@ export async function handleWebhookEvent(event: VerifiedPaymentEvent) {
 
   await logOrderEvent(payment.order_id, 'payment_confirmed', `Confirmed via ${event.gateway} (${event.gatewayReference})`);
 
-  // Deduct stock for each line item — append-only ledger, see inventory_movements.
-  const { data: items } = await supabase
-    .from('order_items')
-    .select('variant_id, quantity')
-    .eq('order_id', payment.order_id);
-
-  if (items?.length) {
-    const movements = items.map((item) => ({
-      variant_id: item.variant_id,
-      quantity_change: -item.quantity,
-      reason: 'sale' as const,
-      reference_order_id: payment.order_id,
-    }));
-    await supabase.from('inventory_movements').insert(movements);
-  }
+  // Deduct stock once — shared with admin/staff status changes so an order
+  // is never deducted twice (see lib/inventory.ts).
+  await syncOrderStock(payment.order_id, 'paid');
 }

@@ -19,16 +19,28 @@ export function OrderDetailPanel({
   const [assignedTo, setAssignedTo] = useState(currentAssigned ?? '');
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<{ tone: 'ok' | 'warn'; text: string } | null>(null);
   const router = useRouter();
 
   async function saveStatus(newStatus: string) {
+    const previous = status;
     setStatus(newStatus);
     setSaving(true);
-    await fetch(`/api/admin/orders/${orderId}`, {
+    setStatusMessage(null);
+    const res = await fetch(`/api/admin/orders/${orderId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }),
     });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setStatus(previous);
+      setStatusMessage({ tone: 'warn', text: data.error ?? 'Could not update the status.' });
+    } else if (data.warning) {
+      setStatusMessage({ tone: 'warn', text: data.warning });
+    } else {
+      setStatusMessage({ tone: 'ok', text: 'Status saved. Stock updated automatically.' });
+    }
     router.refresh();
     setSaving(false);
   }
@@ -69,6 +81,11 @@ export function OrderDetailPanel({
         >
           {STATUSES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
         </select>
+        {statusMessage && (
+          <p className={`mt-1.5 text-xs ${statusMessage.tone === 'warn' ? 'text-[var(--color-danger)]' : 'text-[var(--color-ink-soft)]'}`}>
+            {statusMessage.text}
+          </p>
+        )}
       </div>
 
       <div>
