@@ -15,6 +15,8 @@ const BREVO_URL = 'https://api.brevo.com/v3/smtp/email';
 
 export type EmailMessage = {
   to: { email: string; name?: string };
+  /** Where replies go. Defaults to the support address. */
+  replyTo?: { email: string; name?: string };
   subject: string;
   html: string;
   text: string;
@@ -34,7 +36,7 @@ export async function sendEmail(message: EmailMessage): Promise<boolean> {
       headers: { 'api-key': apiKey, 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify({
         sender: { name: 'GLOBALGETWEST', email: process.env.EMAIL_FROM_ADDRESS || SUPPORT_EMAIL },
-        replyTo: { email: SUPPORT_EMAIL, name: 'GLOBALGETWEST Support' },
+        replyTo: message.replyTo ?? { email: SUPPORT_EMAIL, name: 'GLOBALGETWEST Support' },
         to: [message.to],
         subject: message.subject,
         htmlContent: message.html,

@@ -4,7 +4,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { COUNTRIES } from '@/lib/countries';
-import { SUPPORT_EMAIL } from '@/lib/contact';
 import { requirePatientSession } from '@/lib/health/access';
 import { CONSENT_SECTIONS, CONSENT_STATEMENT, CONSENT_VERSION } from '@/lib/health/consent';
 import { formatRecordDate } from '@/lib/health/labels';
@@ -104,9 +103,9 @@ export default async function HealthRecordsPage() {
           or used as a testimonial.
         </p>
         <p>
-          To ask for a correction, withdraw consent or have your record deleted, email{' '}
-          <a href={`mailto:${SUPPORT_EMAIL}`} className="focus-ring text-[var(--color-forest)] font-medium hover:underline">{SUPPORT_EMAIL}</a>{' '}
-          from <strong>{user.email}</strong>, or ask your practitioner.
+          To ask for a correction, withdraw consent or have your record deleted,{' '}
+          <Link href="/contact?topic=records" className="focus-ring text-[var(--color-forest)] font-medium hover:underline">send us a message</Link>{' '}
+          using <strong>{user.email}</strong>, or ask your practitioner.
         </p>
       </section>
     </div>

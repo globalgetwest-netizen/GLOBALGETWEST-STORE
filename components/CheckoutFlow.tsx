@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { COUNTRIES, currencyForCountry, isAfricanCountry, localCurrencyForCountry } from '@/lib/countries';
 import { formatApproxLocal, formatMoney, formatUsd } from '@/lib/format';
 import type { ShippingRateOption } from '@/lib/shipping/types';
-import { SUPPORT_EMAIL, contactForCountry, westernUnionDesk } from '@/lib/contact';
+import { contactForCountry, westernUnionDesk } from '@/lib/contact';
 import { isManualMethod, methodSummary, paymentSteps, type ManualMethod } from '@/lib/paymentMethods';
 import { ContactAgentButton } from '@/components/ContactAgentButton';
 
@@ -305,8 +305,8 @@ export function CheckoutFlow({
               (never in the page's initial HTML); others show directly. */}
           <div className="mt-6 pt-5 border-t border-[var(--color-border)]">
             <p className="text-sm text-[var(--color-ink-soft)] mb-3">
-              Questions before you order? Your agent is a message away. You can also email{' '}
-              <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>.
+              Questions before you order? Your agent is a message away, or{' '}
+              <a href="/contact" target="_blank" className="underline">send us a message</a>.
             </p>
             <ContactAgentButton
               label={contact.label}

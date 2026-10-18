@@ -1,7 +1,7 @@
 // components/Footer.tsx
 import Link from 'next/link';
 import Image from 'next/image';
-import { CONTACTS, SUPPORT_EMAIL } from '@/lib/contact';
+import { CONTACTS } from '@/lib/contact';
 import { ContactAgentButton } from '@/components/ContactAgentButton';
 import { TikTokIcon } from '@/components/TikTokIcon';
 import { PaymentBadges } from '@/components/PaymentBadges';
@@ -40,11 +40,11 @@ export async function Footer() {
           <h4 className="font-semibold text-[var(--color-ink)] mb-2">Customer Care</h4>
           <ul className="space-y-1">
             <li>Shipping &amp; delivery</li>
-            <li>Order support</li>
             <li>
-              <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-[var(--color-forest)] hover:underline">
-                {SUPPORT_EMAIL}
-              </a>
+              <Link href="/contact?topic=order" className="hover:text-[var(--color-forest)] hover:underline">Order support</Link>
+            </li>
+            <li>
+              <Link href="/contact" className="hover:text-[var(--color-forest)] hover:underline">Contact us</Link>
             </li>
           </ul>
         </div>
