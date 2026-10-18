@@ -3,13 +3,14 @@
 // row in 'pending_payment' status, then creates a hosted checkout session
 // with the resolved gateway and returns the redirect URL.
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { supabaseServerClient, supabaseServiceRole } from '@/lib/supabase/server';
 import { generateOrderNumber, logOrderEvent } from '@/lib/orders';
 import { configuredGateways, getProvider, resolveGatewayForCurrency, PaymentError } from '@/lib/payments';
 import { quoteShippingForCart, findSelectedRate } from '@/lib/shipping/quote';
 import { asCartLines } from '@/lib/cartTypes';
 import { isManualMethod, METHOD_LABEL, type ManualMethod } from '@/lib/paymentMethods';
+import { sendOrderEmail } from '@/lib/orderEmails';
 
 export async function POST(req: NextRequest) {
   const supabase = await supabaseServerClient();
@@ -222,6 +223,7 @@ export async function POST(req: NextRequest) {
   // the customer has an order number), and payment is arranged on WhatsApp.
   if (!gateway) {
     await supabase.from('cart_items').delete().eq('profile_id', user.id);
+    after(() => sendOrderEmail(order.id, 'placed'));
     return NextResponse.json({ redirectUrl: `/orders/${order.id}/success`, orderId: order.id });
   }
 

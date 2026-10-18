@@ -1,8 +1,9 @@
 // app/api/admin/orders/[id]/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { supabaseServerClient } from '@/lib/supabase/server';
 import { logOrderEvent } from '@/lib/orders';
 import { syncOrderStock } from '@/lib/inventory';
+import { emailForStatus, sendOrderEmail } from '@/lib/orderEmails';
 
 export async function PATCH(
   req: NextRequest,
@@ -23,6 +24,8 @@ export async function PATCH(
     const { error } = await supabase.from('orders').update({ status }).eq('id', id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     await logOrderEvent(id, 'status_changed', `Status set to ${status}`, user.id);
+    const emailKind = emailForStatus(status);
+    if (emailKind) after(() => sendOrderEmail(id, emailKind));
     // Keep stock in step: deduct when the order becomes paid (e.g. a bank
     // transfer or Western Union payment confirmed by hand), put it back if
     // it's cancelled or refunded. Never blocks the status change itself.
