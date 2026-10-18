@@ -28,6 +28,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <AdminNavLink href="/admin/homepage-banner">Homepage Banner</AdminNavLink>
           <AdminNavLink href="/admin/orders">Orders</AdminNavLink>
           <AdminNavLink href="/admin/staff">Staff Accounts</AdminNavLink>
+          <AdminNavLink href="/admin/patient-cases">Patient Records</AdminNavLink>
+          <AdminNavLink href="/admin/practitioners">Practitioners</AdminNavLink>
           {isCeo && <AdminNavLink href="/admin/admins">Admin Accounts</AdminNavLink>}
         </nav>
 

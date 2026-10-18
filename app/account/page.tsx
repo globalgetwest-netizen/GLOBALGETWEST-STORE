@@ -8,11 +8,11 @@ export default async function AccountPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.is_anonymous) redirect('/account/sign-in?next=/account');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, phone, role')
-    .eq('id', user.id)
-    .single();
+  const [{ data: profile }, { data: practitioner }] = await Promise.all([
+    supabase.from('profiles').select('full_name, phone, role').eq('id', user.id).single(),
+    supabase.from('practitioners').select('verified_at, revoked_at').eq('profile_id', user.id).maybeSingle(),
+  ]);
+  const isPractitioner = !!practitioner?.verified_at && !practitioner.revoked_at;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-16">
@@ -29,6 +29,17 @@ export default async function AccountPage() {
         <Link href="/account/orders" className="focus-ring text-sm text-[var(--color-forest)] font-medium hover:underline">
           View order history →
         </Link>
+        <Link href="/account/health" className="focus-ring text-sm text-[var(--color-forest)] font-medium hover:underline">
+          My health records →
+        </Link>
+        <Link href="/account/security" className="focus-ring text-sm text-[var(--color-forest)] font-medium hover:underline">
+          Two-step sign-in →
+        </Link>
+        {isPractitioner && (
+          <Link href="/practitioner" className="focus-ring text-sm text-[var(--color-forest)] font-medium hover:underline">
+            Go to practitioner portal →
+          </Link>
+        )}
         {(profile?.role === 'staff' || profile?.role === 'admin') && (
           <Link href="/staff" className="focus-ring text-sm text-[var(--color-forest)] font-medium hover:underline">
             Go to staff portal →
