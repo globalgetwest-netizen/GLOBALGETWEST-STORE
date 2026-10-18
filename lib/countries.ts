@@ -155,6 +155,7 @@ export const COUNTRIES = [
   { code: 'RW', name: 'Rwanda', currency: 'RWF' },
   { code: 'WS', name: 'Samoa', currency: 'WST' },
   { code: 'SM', name: 'San Marino', currency: 'EUR' },
+  { code: 'ST', name: 'São Tomé and Príncipe', currency: 'STN' },
   { code: 'SA', name: 'Saudi Arabia', currency: 'SAR' },
   { code: 'SN', name: 'Senegal', currency: 'XOF' },
   { code: 'RS', name: 'Serbia', currency: 'RSD' },
@@ -198,8 +199,26 @@ export const COUNTRIES = [
   { code: 'VN', name: 'Vietnam', currency: 'VND' },
   { code: 'YE', name: 'Yemen', currency: 'YER' },
   { code: 'ZM', name: 'Zambia', currency: 'ZMW' },
-  { code: 'ZW', name: 'Zimbabwe', currency: 'ZWL' },
+  { code: 'ZW', name: 'Zimbabwe', currency: 'ZWG' },
 ] as const;
+
+/** All 54 African countries (ISO 3166-1 alpha-2). */
+export const AFRICAN_COUNTRY_CODES: readonly string[] = [
+  'DZ', 'AO', 'BJ', 'BW', 'BF', 'BI', 'CV', 'CM', 'CF', 'TD', 'KM', 'CG', 'CD', 'CI',
+  'DJ', 'EG', 'GQ', 'ER', 'SZ', 'ET', 'GA', 'GM', 'GH', 'GN', 'GW', 'KE', 'LS', 'LR',
+  'LY', 'MG', 'MW', 'ML', 'MR', 'MU', 'MA', 'MZ', 'NA', 'NE', 'NG', 'RW', 'ST', 'SN',
+  'SC', 'SL', 'SO', 'ZA', 'SS', 'SD', 'TZ', 'TG', 'TN', 'UG', 'ZM', 'ZW',
+];
+
+export function isAfricanCountry(countryCode: string): boolean {
+  return AFRICAN_COUNTRY_CODES.includes(countryCode);
+}
+
+/** Every African local currency (deduplicated — e.g. XOF and XAF cover
+ *  several countries). The daily rate update keeps all of these current. */
+export const AFRICAN_CURRENCIES: readonly string[] = [
+  ...new Set(AFRICAN_COUNTRY_CODES.map((code) => localCurrencyForCountry(code))),
+].sort();
 
 /**
  * The country's real local currency — for DISPLAY only (e.g. showing

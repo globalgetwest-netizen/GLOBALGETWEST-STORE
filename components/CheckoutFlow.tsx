@@ -1,8 +1,8 @@
 'use client';
 // components/CheckoutFlow.tsx
 import { useState } from 'react';
-import { COUNTRIES, currencyForCountry, localCurrencyForCountry } from '@/lib/countries';
-import { formatMoney, formatUsd } from '@/lib/format';
+import { COUNTRIES, currencyForCountry, isAfricanCountry, localCurrencyForCountry } from '@/lib/countries';
+import { formatApproxLocal, formatMoney, formatUsd } from '@/lib/format';
 import type { ShippingRateOption } from '@/lib/shipping/types';
 import { SUPPORT_EMAIL, contactForCountry, westernUnionDesk } from '@/lib/contact';
 import { isManualMethod, methodSummary, paymentSteps, type ManualMethod } from '@/lib/paymentMethods';
@@ -55,6 +55,10 @@ export function CheckoutFlow({
   const [error, setError] = useState('');
 
   const currency = currencyForCountry(address.countryCode);
+  // Guide amount in the customer's own currency when we charge in another
+  // one (e.g. Kenya: charged in USD, shown ≈ KSh). Africa only.
+  const localCurrency = localCurrencyForCountry(address.countryCode);
+  const guideRate = localCurrency !== currency && isAfricanCountry(address.countryCode) ? fxRates[localCurrency] ?? null : null;
   const availableGateways = (GATEWAYS_BY_CURRENCY[currency] ?? GATEWAYS_BY_CURRENCY.USD)
     .filter((g) => enabledGateways.includes(g.id));
 
@@ -201,10 +205,12 @@ export function CheckoutFlow({
             </div>
           </div>
 
-          {localCurrencyForCountry(address.countryCode) !== currency && (
+          {localCurrency !== currency && (
             <p className="mt-4 text-xs text-[var(--color-ink-soft)]">
-              Your order is charged in {currency}. Your bank converts it to{' '}
-              {localCurrencyForCountry(address.countryCode)} automatically.
+              Your order is charged in {currency}.{' '}
+              {guideRate
+                ? `Prices in ${localCurrency} are a guide at today's rate — your bank or our agent confirms the exact amount.`
+                : `Your bank converts it to ${localCurrency} automatically.`}
             </p>
           )}
 
@@ -358,6 +364,11 @@ export function CheckoutFlow({
         </div>
         {currency !== 'USD' && chargeTotal !== null && (
           <p className="mt-1 text-right text-xs text-[var(--color-ink-soft)]">≈ {formatUsd(total)}</p>
+        )}
+        {guideRate && (
+          <p className="mt-1 text-right text-xs text-[var(--color-ink-soft)] tabular-nums">
+            ≈ {formatApproxLocal(total, { currency: localCurrency, rate: guideRate })} at today&apos;s rate
+          </p>
         )}
       </aside>
     </div>

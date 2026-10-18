@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { supabaseServerClient } from '@/lib/supabase/server';
 import { formatUsd } from '@/lib/catalog';
+import { LocalPrice } from '@/components/LocalPrice';
 import { CartItemRow } from '@/components/CartItemRow';
 import { SecureCheckoutNote } from '@/components/SecureCheckoutNote';
 import { asCartLines } from '@/lib/cartTypes';
@@ -81,6 +82,7 @@ export default async function CartPage() {
             <span className="font-medium">Estimated total</span>
             <span className="font-display text-2xl">{formatUsd(subtotal)}</span>
           </div>
+          <LocalPrice usdCents={subtotal} className="block mt-1 text-right text-xs" />
           <Link
             href="/checkout"
             className="focus-ring mt-6 block text-center bg-[var(--color-charcoal)] text-white font-semibold px-6 py-3.5 rounded hover:bg-black transition-colors"
