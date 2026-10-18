@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatUsd } from '@/lib/format';
+import { LocalPrice } from '@/components/LocalPrice';
 
 interface Variant {
   id: string;
@@ -67,6 +68,7 @@ export function AddToCartForm({ variants }: { variants: Variant[] }) {
             </option>
           ))}
         </select>
+        {selected && <LocalPrice usdCents={selected.price_usd_cents} className="block mt-1.5 text-sm" />}
       </div>
 
       <div className="flex items-end gap-3">

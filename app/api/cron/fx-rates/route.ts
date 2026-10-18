@@ -1,6 +1,7 @@
 // app/api/cron/fx-rates/route.ts
 // Daily exchange-rate refresh (scheduled in vercel.json). Adds today's
-// USD → GHS / NGN rates to fx_rates; checkout always uses the newest row.
+// USD rates for every African currency to fx_rates. GHS/NGN are what
+// checkout charges; the rest power the "≈ local price" guide.
 //
 // Safety:
 // - If CRON_SECRET is set in Vercel, only Vercel's scheduler (which sends
@@ -11,10 +12,11 @@
 //   logged instead of saved — a bad feed can never reprice the store.
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseServiceRole } from '@/lib/supabase/server';
+import { AFRICAN_CURRENCIES } from '@/lib/countries';
 
 export const dynamic = 'force-dynamic';
 
-const CURRENCIES = ['GHS', 'NGN'] as const;
+const CURRENCIES = AFRICAN_CURRENCIES; // includes GHS and NGN
 const SOURCE_URL = 'https://open.er-api.com/v6/latest/USD';
 const MIN_HOURS_BETWEEN_UPDATES = 12;
 const MAX_CHANGE = 0.25;
@@ -29,23 +31,23 @@ export async function GET(req: NextRequest) {
   const now = Date.now();
   const results: Record<string, string> = {};
 
+  // Current rate for every currency, in one query.
+  const { data: current, error: readError } = await svc
+    .from('latest_fx_rates')
+    .select('quote_currency, rate, effective_at')
+    .eq('base_currency', 'USD')
+    .in('quote_currency', [...CURRENCIES]);
+  if (readError) {
+    // Never save rates we can't compare against the current ones.
+    console.error('FX refresh: could not read current rates', readError);
+    return NextResponse.json({ ok: false, error: `Could not read current rates (${readError.message})` }, { status: 500 });
+  }
+  const latestByCode = new Map((current ?? []).map((r) => [r.quote_currency, r]));
+
   // Which currencies actually need an update?
   const due: { code: string; previous: number | null }[] = [];
   for (const code of CURRENCIES) {
-    const { data: latest, error: readError } = await svc
-      .from('fx_rates')
-      .select('rate, effective_at')
-      .eq('base_currency', 'USD')
-      .eq('quote_currency', code)
-      .order('effective_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (readError) {
-      // Never save a rate we can't compare against the current one.
-      console.error(`FX refresh: could not read current ${code} rate`, readError);
-      results[code] = `skipped — could not read current rate (${readError.message})`;
-      continue;
-    }
+    const latest = latestByCode.get(code);
     const ageHours = latest ? (now - new Date(latest.effective_at).getTime()) / 3_600_000 : Infinity;
     if (ageHours < MIN_HOURS_BETWEEN_UPDATES) {
       results[code] = `skipped — updated ${ageHours.toFixed(1)}h ago`;

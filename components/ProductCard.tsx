@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatUsd } from '@/lib/format';
+import { LocalPrice } from '@/components/LocalPrice';
 import type { ProductCardData } from '@/lib/catalog';
 
 function StarRating({ rating }: { rating: number }) {
@@ -117,6 +118,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
           <span className="font-semibold text-[17px] text-[var(--color-forest)]">
             {formatUsd(product.price_from_usd_cents)}
           </span>
+          <LocalPrice usdCents={product.price_from_usd_cents} className="block text-xs mt-0.5" />
         </div>
 
         {product.default_variant_id && (
