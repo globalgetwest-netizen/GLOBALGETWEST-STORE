@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
   // Which currencies actually need an update?
   const due: { code: string; previous: number | null }[] = [];
   for (const code of CURRENCIES) {
-    const { data: latest } = await svc
+    const { data: latest, error: readError } = await svc
       .from('fx_rates')
       .select('rate, effective_at')
       .eq('base_currency', 'USD')
@@ -40,6 +40,12 @@ export async function GET(req: NextRequest) {
       .order('effective_at', { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (readError) {
+      // Never save a rate we can't compare against the current one.
+      console.error(`FX refresh: could not read current ${code} rate`, readError);
+      results[code] = `skipped — could not read current rate (${readError.message})`;
+      continue;
+    }
     const ageHours = latest ? (now - new Date(latest.effective_at).getTime()) / 3_600_000 : Infinity;
     if (ageHours < MIN_HOURS_BETWEEN_UPDATES) {
       results[code] = `skipped — updated ${ageHours.toFixed(1)}h ago`;
