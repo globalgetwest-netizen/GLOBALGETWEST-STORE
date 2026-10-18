@@ -367,7 +367,7 @@ export function CheckoutFlow({
         )}
         {guideRate && (
           <p className="mt-1 text-right text-xs text-[var(--color-ink-soft)] tabular-nums">
-            ≈ {formatApproxLocal(total, { currency: localCurrency, rate: guideRate })} at today&apos;s rate
+            {`≈ ${formatApproxLocal(total, { currency: localCurrency, rate: guideRate })} at today's rate`}
           </p>
         )}
       </aside>
