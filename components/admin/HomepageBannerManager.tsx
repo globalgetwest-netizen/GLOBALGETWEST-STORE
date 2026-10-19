@@ -70,24 +70,24 @@ export function HomepageBannerManager({ initial }: { initial: Banner[] }) {
       <div className="rounded-lg border border-[var(--color-border)] p-4 space-y-3">
         <h3 className="font-semibold text-sm">Add a new banner</h3>
         <div>
-          <label className="block text-sm font-medium mb-1">Caption (optional)</label>
-          <input
+          <label htmlFor="hb-caption-optional" className="field-label">Caption (optional)</label>
+          <input id="hb-caption-optional"
             type="text" value={caption} onChange={(e) => setCaption(e.target.value)}
-            className="focus-ring w-full rounded border border-[var(--color-border)] px-3 py-2 text-sm"
+            className="field"
             placeholder="A short line of text under the image"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Link URL (optional)</label>
-          <input
+          <label htmlFor="hb-link-url-optional" className="field-label">Link URL (optional)</label>
+          <input id="hb-link-url-optional"
             type="text" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)}
-            className="focus-ring w-full rounded border border-[var(--color-border)] px-3 py-2 text-sm"
+            className="field"
             placeholder="/products or a full URL"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Image</label>
-          <input type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} />
+          <label htmlFor="banner-file" className="field-label">Image</label>
+          <input id="banner-file" type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} className="field" />
           {uploading && <p className="text-xs text-[var(--color-ink-soft)] mt-1">Uploading…</p>}
         </div>
         {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}

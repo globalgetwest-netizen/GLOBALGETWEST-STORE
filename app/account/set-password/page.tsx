@@ -1,10 +1,13 @@
 'use client';
 // app/account/set-password/page.tsx
-// Last step for a guest who chose "Save my details" after ordering: the
-// email link signs them in, and here they pick a password for next time.
+// Where the email link lands when someone picks a password: a guest who
+// chose "Save my details" after ordering, or anyone who used
+// "Forgot password?" on the sign-in page.
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowserClient } from '@/lib/supabase/client';
+import { AuthCard, FormNotice } from '@/components/AuthCard';
+import { PasswordInput } from '@/components/PasswordInput';
 
 export default function SetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -18,7 +21,9 @@ export default function SetPasswordPage() {
     setError('');
     const { error: updateError } = await supabaseBrowserClient().auth.updateUser({ password });
     if (updateError) {
-      setError(updateError.message);
+      setError(/session/i.test(updateError.message)
+        ? 'This link has expired. Please request a new one from the sign-in page.'
+        : updateError.message);
       setLoading(false);
       return;
     }
@@ -27,22 +32,21 @@ export default function SetPasswordPage() {
   }
 
   return (
-    <div className="mx-auto max-w-sm px-4 py-16">
-      <h1 className="font-display text-2xl mb-2">Choose a password</h1>
-      <p className="text-sm text-[var(--color-ink-soft)] mb-6">Your email is confirmed. Set a password to sign in next time.</p>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
-          className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-        />
-        {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
-        <button
-          type="submit" disabled={loading}
-          className="focus-ring w-full bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black disabled:opacity-60"
-        >
+    <AuthCard eyebrow="Your account" title="Choose a password" subtitle="Your email is confirmed. Set a password to sign in next time.">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label htmlFor="new-password" className="field-label">New password</label>
+          <PasswordInput
+            id="new-password" value={password} onChange={setPassword}
+            autoComplete="new-password" minLength={8} describedBy="new-password-hint"
+          />
+          <p id="new-password-hint" className="field-hint">At least 8 characters.</p>
+        </div>
+        {error && <FormNotice tone="error">{error}</FormNotice>}
+        <button type="submit" disabled={loading} className="btn btn-primary w-full">
           {loading ? 'Saving…' : 'Save password'}
         </button>
       </form>
-    </div>
+    </AuthCard>
   );
 }

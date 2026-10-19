@@ -101,16 +101,16 @@ function SecuritySettings() {
 
   const codeInput = (factorId: string, label: string) => (
     <form onSubmit={(e) => { e.preventDefault(); verify(factorId); }} className="space-y-3 mt-6">
-      <label htmlFor="mfa-code" className="block text-sm font-medium">{label}</label>
+      <label htmlFor="mfa-code" className="field-label">{label}</label>
       <input
         id="mfa-code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]{6,7}" maxLength={7} required
         value={code} onChange={(e) => setCode(e.target.value)} placeholder="123 456"
-        className="focus-ring w-40 rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-lg tracking-[0.3em] font-medium"
+        className="field w-40 text-lg tracking-[0.3em] font-medium"
       />
       {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
       <button
         type="submit" disabled={busy}
-        className="focus-ring block bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black disabled:opacity-60"
+        className="btn btn-primary w-full"
       >
         {busy ? 'Checking…' : 'Confirm'}
       </button>
@@ -136,7 +136,7 @@ function SecuritySettings() {
             {error && <p className="text-sm text-[var(--color-danger)] mb-3">{error}</p>}
             <button
               type="button" onClick={startEnrolment} disabled={busy}
-              className="focus-ring bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black disabled:opacity-60"
+              className="btn btn-primary"
             >
               {busy ? 'Starting…' : 'Set up two-step sign-in'}
             </button>
@@ -156,7 +156,7 @@ function SecuritySettings() {
               Two-step sign-in is on, and this session is confirmed.
             </p>
             {next && (
-              <Link href={next} className="focus-ring inline-block mt-5 bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black">
+              <Link href={next} className="btn btn-primary mt-5">
                 Continue
               </Link>
             )}

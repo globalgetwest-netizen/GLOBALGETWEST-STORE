@@ -42,12 +42,12 @@ export function NewsletterSignup() {
         placeholder="Your email address"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="focus-ring flex-1 rounded px-4 py-2.5 text-sm text-[var(--color-ink)] bg-white border border-[var(--color-border)] placeholder:text-[var(--color-ink-soft)]"
+        className="field flex-1 px-4 text-[var(--color-ink)] placeholder:text-[var(--color-ink-soft)]"
       />
       <button
         type="submit"
         disabled={status === 'loading'}
-        className="focus-ring bg-[var(--color-charcoal)] text-white font-semibold px-6 py-2.5 rounded hover:bg-black transition-colors disabled:opacity-60 whitespace-nowrap"
+        className="btn btn-primary whitespace-nowrap"
       >
         {status === 'loading' ? 'Joining…' : 'Subscribe'}
       </button>

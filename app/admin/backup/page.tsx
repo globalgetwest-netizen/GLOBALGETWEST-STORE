@@ -21,7 +21,7 @@ export default async function BackupPage() {
       <div className="border border-[var(--color-border)] rounded-lg bg-white p-6 mb-6">
         <a
           href="/api/admin/backup"
-          className="focus-ring inline-block bg-[var(--color-charcoal)] text-white font-semibold px-6 py-3 rounded hover:bg-black transition-colors"
+          className="btn btn-primary"
         >
           Download full backup
         </a>

@@ -46,7 +46,7 @@ export async function Header() {
               name="q"
               type="search"
               placeholder="Search products, categories and wellness"
-              className="focus-ring w-full rounded px-3.5 py-2 text-[var(--color-ink)] bg-[var(--color-parchment-warm)] border border-[var(--color-border)] placeholder:text-[var(--color-ink-soft)] text-sm"
+              className="field px-3.5 text-[var(--color-ink)] bg-[var(--color-parchment-warm)] placeholder:text-[var(--color-ink-soft)]"
             />
           </form>
 

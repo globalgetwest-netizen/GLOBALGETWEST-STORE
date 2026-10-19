@@ -95,17 +95,17 @@ export function StaffManager({ initial }: { initial: StaffMember[] }) {
         <input
           type="email" placeholder="Existing customer's email" required value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="focus-ring flex-1 min-w-[200px] rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="field flex-1 min-w-[200px]"
         />
         <select
           value={department} onChange={(e) => setDepartment(e.target.value)}
-          className="focus-ring rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm capitalize"
+          className="field capitalize"
         >
           {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
         </select>
         <select
           value={countryCode} onChange={(e) => setCountryCode(e.target.value)}
-          className="focus-ring rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="field"
         >
           {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
         </select>
@@ -139,7 +139,7 @@ export function StaffManager({ initial }: { initial: StaffMember[] }) {
                     <select
                       value={s.department ?? 'general'}
                       onChange={(e) => changeDepartment(s.id, e.target.value)}
-                      className="focus-ring rounded-md border border-[var(--color-border)] bg-white px-2 py-1 text-xs capitalize"
+                      className="field text-xs capitalize"
                     >
                       {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
                     </select>
@@ -150,7 +150,7 @@ export function StaffManager({ initial }: { initial: StaffMember[] }) {
                     <select
                       value={s.country_code ?? ''}
                       onChange={(e) => changeCountry(s.id, e.target.value)}
-                      className="focus-ring rounded-md border border-[var(--color-border)] bg-white px-2 py-1 text-xs"
+                      className="field text-xs"
                     >
                       {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
                     </select>

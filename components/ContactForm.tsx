@@ -4,8 +4,8 @@
 import { useState } from 'react';
 import { CONTACT_TOPICS, type ContactTopic } from '@/lib/contactTopics';
 
-const field = 'focus-ring w-full h-11 rounded-md border border-[var(--color-border)] bg-white px-3 text-sm';
-const label = 'block text-sm font-medium mb-1.5';
+const field = 'field';
+const label = 'field-label';
 
 export function ContactForm({ initialTopic = 'general', initialOrder = '' }: { initialTopic?: ContactTopic; initialOrder?: string }) {
   const [startedAt] = useState(() => Date.now());
@@ -93,7 +93,7 @@ export function ContactForm({ initialTopic = 'general', initialOrder = '' }: { i
         <label htmlFor="c-message" className={label}>Message</label>
         <textarea
           id="c-message" required rows={6} maxLength={5000} value={form.message} onChange={set('message')}
-          className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm leading-relaxed"
+          className="field leading-relaxed"
         />
       </div>
 
@@ -111,7 +111,7 @@ export function ContactForm({ initialTopic = 'general', initialOrder = '' }: { i
         <button
           type="submit"
           disabled={status === 'sending'}
-          className="focus-ring bg-[var(--color-charcoal)] text-white font-semibold px-7 py-3 rounded hover:bg-black transition-colors disabled:opacity-60"
+          className="btn btn-primary"
         >
           {status === 'sending' ? 'Sending…' : 'Send message'}
         </button>

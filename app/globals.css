@@ -25,8 +25,13 @@
   --font-body: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
-* {
-  border-color: var(--color-border);
+/* Default border colour. In the base layer so Tailwind border-colour
+   utilities (e.g. a red error border) and the form styles can override it —
+   unlayered, it silently beat every coloured border on the site. */
+@layer base {
+  *, ::before, ::after {
+    border-color: var(--color-border);
+  }
 }
 
 body {
@@ -61,4 +66,155 @@ h1, h2, h3, .font-display {
   @page { size: A4; margin: 16mm 14mm; }
   html, body { background: #ffffff !important; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ---------------------------------------------------------------------------
+   Form design system — one look for every form on the site.
+   .field          text inputs, selects, textareas, file inputs
+   .field-label    label above a field (pair with htmlFor/id)
+   .field-hint     helper text under a field
+   .field-error    validation message under a field
+   .field-optional "(optional)" marker inside a label
+   .btn + .btn-primary / .btn-secondary / .btn-quiet
+   .form-card      the white panel a form sits in
+   Utilities in a component's className still override these (components
+   layer), e.g. "field w-20" or "btn btn-primary w-full".
+   ------------------------------------------------------------------------ */
+@layer components {
+  .field {
+    display: block;
+    width: 100%;
+    min-height: 2.875rem;
+    padding: 0 0.875rem;
+    font: inherit;
+    font-size: 1rem;           /* 16px on phones: stops iOS zooming into fields */
+    line-height: 1.4;
+    color: var(--color-ink);
+    background-color: #fff;
+    border: 1px solid #D9D9D4;
+    border-radius: 0.625rem;
+    box-shadow: inset 0 1px 2px rgba(17, 17, 17, 0.04);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  }
+  @media (min-width: 640px) {
+    .field { font-size: 0.9375rem; }
+  }
+  .field:hover:not(:disabled) { border-color: #B9B9B2; }
+  .field:focus,
+  .field:focus-visible {
+    outline: none;
+    border-color: var(--color-forest);
+    box-shadow: 0 0 0 4px rgba(192, 138, 52, 0.2);
+  }
+  .field::placeholder { color: #A6A6A0; }
+  .field:disabled,
+  .field[readonly] {
+    background-color: #F6F6F3;
+    color: var(--color-ink-soft);
+    cursor: not-allowed;
+  }
+  .field[aria-invalid="true"] { border-color: var(--color-danger); }
+  .field[aria-invalid="true"]:focus { box-shadow: 0 0 0 4px rgba(179, 38, 30, 0.15); }
+
+  textarea.field {
+    min-height: 7.5rem;
+    padding: 0.75rem 0.875rem;
+    line-height: 1.6;
+    resize: vertical;
+  }
+  select.field {
+    appearance: none;
+    padding-right: 2.5rem;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%230F2A45' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.95rem center;
+    background-size: 12px 8px;
+  }
+  input[type="file"].field {
+    padding: 0.4rem;
+    font-size: 0.875rem;
+    color: var(--color-ink-soft);
+    cursor: pointer;
+  }
+  input[type="file"].field::file-selector-button {
+    margin-right: 0.75rem;
+    padding: 0.5rem 0.9rem;
+    border: 0;
+    border-radius: 0.45rem;
+    background: var(--color-forest);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    cursor: pointer;
+  }
+  input[type="number"].field { font-variant-numeric: tabular-nums; }
+
+  .field-label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--color-ink);
+  }
+  .field-optional {
+    font-weight: 400;
+    color: var(--color-ink-muted);
+  }
+  .field-hint {
+    margin-top: 0.4rem;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--color-ink-soft);
+  }
+  .field-error {
+    margin-top: 0.4rem;
+    font-size: 0.8125rem;
+    color: var(--color-danger);
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 1.125rem;
+    height: 1.125rem;
+    accent-color: var(--color-forest);
+    cursor: pointer;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.875rem;
+    padding: 0 1.4rem;
+    border-radius: 0.625rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+  }
+  .btn:focus-visible { outline: 2px solid var(--color-ochre); outline-offset: 2px; }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+  .btn-primary { background: var(--color-charcoal); color: #fff; }
+  .btn-primary:hover:not(:disabled) {
+    background: #000;
+    box-shadow: 0 6px 18px -8px rgba(15, 42, 69, 0.55);
+    transform: translateY(-1px);
+  }
+  .btn-secondary { background: #fff; color: var(--color-ink); border: 1px solid var(--color-charcoal); }
+  .btn-secondary:hover:not(:disabled) { background: var(--color-parchment-warm); }
+  .btn-quiet { background: transparent; color: var(--color-forest); padding: 0 0.75rem; }
+  .btn-quiet:hover:not(:disabled) { background: var(--color-parchment-warm); }
+
+  .form-card {
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 0.875rem;
+    box-shadow: 0 1px 2px rgba(17, 17, 17, 0.04), 0 12px 32px -18px rgba(15, 42, 69, 0.18);
+  }
 }

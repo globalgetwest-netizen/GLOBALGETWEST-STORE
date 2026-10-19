@@ -48,10 +48,10 @@ export function EraseRecordButton({ patientId, patientName }: { patientId: strin
         their practitioner), after checking no law requires you to keep it. Every case, entry and file for this patient
         is deleted and cannot be recovered. The access log keeps a line saying the erasure happened, with no contents.
       </p>
-      <label htmlFor="erase-confirm" className="block text-xs font-medium">Type <strong>{patientName}</strong> to confirm</label>
+      <label htmlFor="erase-confirm" className="field-label">Type <strong>{patientName}</strong> to confirm</label>
       <input
         id="erase-confirm" value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off"
-        className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+        className="field"
       />
       {error && <p className="text-xs text-[var(--color-danger)]">{error}</p>}
       <div className="flex gap-2">

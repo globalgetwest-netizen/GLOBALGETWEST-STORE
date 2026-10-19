@@ -53,7 +53,7 @@ export function AdminManager({ initial }: { initial: AdminMember[] }) {
         <input
           type="email" placeholder="Existing customer's email" required value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="focus-ring flex-1 rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="field flex-1"
         />
         <button
           type="submit" disabled={saving}

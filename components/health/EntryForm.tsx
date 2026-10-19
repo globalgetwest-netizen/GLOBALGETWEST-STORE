@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ENTRY_KIND_LABELS, PRACTITIONER_ENTRY_KINDS } from '@/lib/health/labels';
 import { FileInput } from '@/components/health/FileInput';
 
-const input = 'focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm';
+const input = 'field';
 
 const PLACEHOLDERS: Record<string, string> = {
   intake: 'Presenting complaint, history, medicines, allergies, observations.',
@@ -62,14 +62,14 @@ export function EntryForm({ caseId, orders }: { caseId: string; orders: OrderOpt
 
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label htmlFor="ef-kind" className="block text-sm font-medium mb-1.5">Kind</label>
+          <label htmlFor="ef-kind" className="field-label">Kind</label>
           <select id="ef-kind" value={kind} onChange={(e) => setKind(e.target.value)} className={input}>
             {PRACTITIONER_ENTRY_KINDS.map((k) => <option key={k} value={k}>{ENTRY_KIND_LABELS[k]}</option>)}
           </select>
         </div>
         {kind === 'product_dispensed' && (
           <div>
-            <label htmlFor="ef-order" className="block text-sm font-medium mb-1.5">Linked order <span className="font-normal text-[var(--color-ink-muted)]">(optional)</span></label>
+            <label htmlFor="ef-order" className="field-label">Linked order <span className="font-normal text-[var(--color-ink-muted)]">(optional)</span></label>
             <select id="ef-order" value={orderId} onChange={(e) => setOrderId(e.target.value)} className={input}>
               <option value="">{orders.length ? 'Not linked to an order' : 'No orders found for this patient'}</option>
               {orders.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
@@ -79,7 +79,7 @@ export function EntryForm({ caseId, orders }: { caseId: string; orders: OrderOpt
       </div>
 
       <div>
-        <label htmlFor="ef-body" className="block text-sm font-medium mb-1.5">{ENTRY_KIND_LABELS[kind as keyof typeof ENTRY_KIND_LABELS]}</label>
+        <label htmlFor="ef-body" className="field-label">{ENTRY_KIND_LABELS[kind as keyof typeof ENTRY_KIND_LABELS]}</label>
         <textarea
           id="ef-body" required rows={5} maxLength={20000} value={body} onChange={(e) => setBody(e.target.value)}
           placeholder={PLACEHOLDERS[kind]} className={input}
@@ -100,7 +100,7 @@ export function EntryForm({ caseId, orders }: { caseId: string; orders: OrderOpt
       <div className="flex items-center gap-3">
         <button
           type="submit" disabled={saving || !body.trim()}
-          className="focus-ring bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black disabled:opacity-60"
+          className="btn btn-primary"
         >
           {saving ? 'Saving…' : 'Sign and add entry'}
         </button>

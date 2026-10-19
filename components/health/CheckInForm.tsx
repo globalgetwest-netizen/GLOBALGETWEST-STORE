@@ -62,11 +62,11 @@ export function CheckInForm({ caseId }: { caseId: string }) {
       </fieldset>
 
       <div>
-        <label htmlFor={`checkin-${caseId}`} className="block text-sm font-medium mb-1.5">Symptoms and anything you’ve noticed</label>
+        <label htmlFor={`checkin-${caseId}`} className="field-label">Symptoms and anything you’ve noticed</label>
         <textarea
           id={`checkin-${caseId}`} required rows={4} maxLength={20000} value={body} onChange={(e) => { setBody(e.target.value); setDone(false); }}
           placeholder="e.g. Less tired this week. Taking the tonic twice a day as advised."
-          className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="field"
         />
       </div>
 
@@ -77,7 +77,7 @@ export function CheckInForm({ caseId }: { caseId: string }) {
 
       <button
         type="submit" disabled={saving || !body.trim()}
-        className="focus-ring bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black disabled:opacity-60"
+        className="btn btn-primary"
       >
         {saving ? 'Saving…' : 'Add check-in'}
       </button>

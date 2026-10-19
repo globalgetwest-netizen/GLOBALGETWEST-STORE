@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabaseBrowserClient } from '@/lib/supabase/client';
 import { readGuestCart, restoreGuestCart } from '@/lib/guestCart';
+import { safeNextPath } from '@/lib/safeNext';
+import { AuthCard, FormNotice } from '@/components/AuthCard';
+import { PasswordInput } from '@/components/PasswordInput';
 
 export default function SignInPage() {
   return (
@@ -14,26 +17,33 @@ export default function SignInPage() {
   );
 }
 
+function friendlyError(message: string): string {
+  if (/invalid login credentials/i.test(message)) return 'That email and password don’t match. Please try again, or reset your password below.';
+  if (/email not confirmed/i.test(message)) return 'Please confirm your email first — open the link we sent to your inbox.';
+  return message;
+}
+
 function SignInForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const next = searchParams.get('next') ?? '/';
+  const next = safeNextPath(useSearchParams().get('next'));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setNotice('');
 
     const supabase = supabaseBrowserClient();
     const guestCart = await readGuestCart(supabase);
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (signInError) {
-      setError(signInError.message);
+      setError(friendlyError(signInError.message));
       setLoading(false);
       return;
     }
@@ -43,50 +53,73 @@ function SignInForm() {
     router.refresh();
   }
 
+  async function sendReset() {
+    setError('');
+    setNotice('');
+    if (!email) {
+      setError('Enter your email above first, then choose “Forgot password?”.');
+      return;
+    }
+    const { error: resetError } = await supabaseBrowserClient().auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent('/account/set-password')}`,
+    });
+    if (resetError) {
+      setError(resetError.message);
+      return;
+    }
+    setNotice(`If an account exists for ${email}, we’ve sent a link to choose a new password.`);
+  }
+
+  const fromCheckout = next.startsWith('/checkout') || next.startsWith('/cart');
+
   return (
-    <div className="mx-auto max-w-sm px-4 py-16">
-      <h1 className="font-display text-2xl mb-6">Sign in</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <AuthCard
+      eyebrow="Welcome back"
+      title="Sign in"
+      subtitle="Access your orders, receipts and health records."
+      footer={
+        <>
+          New to GLOBALGETWEST?{' '}
+          <Link href={`/account/sign-up?next=${encodeURIComponent(next)}`} className="focus-ring text-[var(--color-forest)] font-semibold hover:underline">
+            Create an account
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium mb-1.5">Email</label>
+          <label htmlFor="signin-email" className="field-label">Email</label>
           <input
-            type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-            className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+            id="signin-email" type="email" required autoComplete="email" inputMode="email"
+            value={email} onChange={(e) => setEmail(e.target.value)} className="field"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1.5">Password</label>
-          <input
-            type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-            className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
-          />
+          <div className="flex items-baseline justify-between">
+            <label htmlFor="signin-password" className="field-label">Password</label>
+            <button type="button" onClick={sendReset} className="focus-ring text-xs font-semibold text-[var(--color-forest)] hover:underline">
+              Forgot password?
+            </button>
+          </div>
+          <PasswordInput id="signin-password" value={password} onChange={setPassword} autoComplete="current-password" />
         </div>
 
-        {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
+        {error && <FormNotice tone="error">{error}</FormNotice>}
+        {notice && <FormNotice tone="success">{notice}</FormNotice>}
 
-        <button
-          type="submit" disabled={loading}
-          className="focus-ring w-full bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black disabled:opacity-60"
-        >
-          {loading ? 'Signing in…' : 'Sign In'}
+        <button type="submit" disabled={loading} className="btn btn-primary w-full">
+          {loading ? 'Signing in…' : 'Sign in'}
         </button>
+
+        {fromCheckout && (
+          <>
+            <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
+              <span className="h-px flex-1 bg-[var(--color-border)]" />or<span className="h-px flex-1 bg-[var(--color-border)]" />
+            </div>
+            <Link href={next} className="btn btn-secondary w-full">Continue as guest</Link>
+          </>
+        )}
       </form>
-
-      {(next.startsWith('/checkout') || next.startsWith('/cart')) && (
-        <Link
-          href={next}
-          className="focus-ring mt-3 block w-full text-center border border-[var(--color-charcoal)] font-semibold px-5 py-2.5 rounded hover:bg-[var(--color-parchment-warm)]"
-        >
-          Continue as guest
-        </Link>
-      )}
-
-      <p className="text-sm text-[var(--color-ink-soft)] mt-6 text-center">
-        New here?{' '}
-        <Link href={`/account/sign-up?next=${encodeURIComponent(next)}`} className="focus-ring text-[var(--color-forest)] font-medium hover:underline">
-          Create an account
-        </Link>
-      </p>
-    </div>
+    </AuthCard>
   );
 }

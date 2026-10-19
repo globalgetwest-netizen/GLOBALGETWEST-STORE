@@ -74,10 +74,10 @@ export function OrderDetailPanel({
   return (
     <div className="space-y-5">
       <div>
-        <label className="block text-sm font-medium mb-1.5">Status</label>
-        <select
+        <label htmlFor="odp-status" className="field-label">Status</label>
+        <select id="odp-status"
           value={status} disabled={saving} onChange={(e) => saveStatus(e.target.value)}
-          className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm capitalize"
+          className="field capitalize"
         >
           {STATUSES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
         </select>
@@ -89,10 +89,10 @@ export function OrderDetailPanel({
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1.5">Assigned to (fulfilment)</label>
-        <select
+        <label htmlFor="odp-assigned-to-fulfilment" className="field-label">Assigned to (fulfilment)</label>
+        <select id="odp-assigned-to-fulfilment"
           value={assignedTo} disabled={saving} onChange={(e) => saveAssignment(e.target.value)}
-          className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="field"
         >
           <option value="">Unassigned</option>
           {staffOptions.map((s) => <option key={s.id} value={s.id}>{s.full_name ?? s.id}</option>)}
@@ -100,10 +100,10 @@ export function OrderDetailPanel({
       </div>
 
       <form onSubmit={addNote} className="space-y-2">
-        <label className="block text-sm font-medium">Add a note</label>
-        <textarea
+        <label htmlFor="odp-add-a-note" className="field-label">Add a note</label>
+        <textarea id="odp-add-a-note"
           value={note} onChange={(e) => setNote(e.target.value)} rows={2}
-          className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="field"
         />
         <button
           type="submit" disabled={saving || !note.trim()}

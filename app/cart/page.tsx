@@ -39,7 +39,7 @@ export default async function CartPage() {
         </p>
         <Link
           href="/products"
-          className="focus-ring inline-block bg-[var(--color-charcoal)] text-white font-semibold px-7 py-3 rounded hover:bg-black transition-colors"
+          className="btn btn-primary"
         >
           Shop all products
         </Link>
@@ -85,7 +85,7 @@ export default async function CartPage() {
           <LocalPrice usdCents={subtotal} className="block mt-1 text-right text-xs" />
           <Link
             href="/checkout"
-            className="focus-ring mt-6 block text-center bg-[var(--color-charcoal)] text-white font-semibold px-6 py-3.5 rounded hover:bg-black transition-colors"
+            className="btn btn-primary mt-6 w-full"
           >
             Checkout
           </Link>

@@ -106,11 +106,11 @@ export function CategoryManager({ initial }: { initial: Category[] }) {
         <input
           type="text" placeholder="Name" required value={name}
           onChange={(e) => { setName(e.target.value); setSlug(slugify(e.target.value)); }}
-          className="focus-ring flex-1 rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="field flex-1"
         />
         <input
           type="text" placeholder="slug" required value={slug} onChange={(e) => setSlug(slugify(e.target.value))}
-          className="focus-ring w-40 rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="field w-40"
         />
         <button
           type="submit" disabled={saving}
@@ -129,12 +129,12 @@ export function CategoryManager({ initial }: { initial: Category[] }) {
                 <input
                   value={editName}
                   onChange={(e) => { setEditName(e.target.value); setEditSlug(slugify(e.target.value)); }}
-                  className="focus-ring flex-1 rounded-md border border-[var(--color-border)] px-2 py-1.5 text-sm"
+                  className="field flex-1"
                 />
                 <input
                   value={editSlug}
                   onChange={(e) => setEditSlug(slugify(e.target.value))}
-                  className="focus-ring w-36 rounded-md border border-[var(--color-border)] px-2 py-1.5 text-sm"
+                  className="field w-36"
                 />
                 <button onClick={() => saveEdit(c.id)} disabled={saving} className="focus-ring text-[var(--color-forest)] font-medium hover:underline">
                   Save
