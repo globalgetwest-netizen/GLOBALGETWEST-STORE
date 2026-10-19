@@ -58,7 +58,8 @@ export default async function VerifyPage({ params }: { params: Promise<{ id: str
   const statusText = paid ? 'Paid in full' : closed ? (order.status === 'refunded' ? 'Refunded' : 'Cancelled') : 'Awaiting payment';
 
   const rows: [string, string][] = [
-    ['Document', `${docType} No. ${order.order_number}`],
+    ['Document', docType],
+    ['Number', order.order_number],
     ['Issued', formatDate(order.created_at)],
     ['Status', statusText],
     [paid ? 'Amount paid' : 'Amount', formatMoney(charge.amountMinorUnits, charge.currency)],
@@ -78,7 +79,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ id: str
         {rows.map(([k, v]) => (
           <div key={k} className="flex justify-between gap-4 px-5 py-3 text-sm">
             <dt className="text-[var(--color-ink-soft)]">{k}</dt>
-            <dd className="font-medium text-right tabular-nums">{v}</dd>
+            <dd className="font-medium text-right tabular-nums whitespace-nowrap">{v}</dd>
           </div>
         ))}
       </dl>
