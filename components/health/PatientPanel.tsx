@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ClaimCodeNotice } from '@/components/health/ClaimCodeNotice';
 
-const input = 'focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm';
+const input = 'field';
 
 export function ClaimCodeReset({ patientId }: { patientId: string }) {
   const [issued, setIssued] = useState<{ claimCode: string; claimCodeExpiresAt: string } | null>(null);
@@ -75,12 +75,12 @@ export function NewCaseForm({ patientId, categories }: { patientId: string; cate
   return (
     <form onSubmit={submit} className="space-y-3">
       <div>
-        <label htmlFor="nc-condition" className="block text-xs font-medium mb-1">Condition</label>
+        <label htmlFor="nc-condition" className="field-label">Condition</label>
         <input id="nc-condition" name="condition" required maxLength={200} className={input} />
       </div>
       {categories.length > 0 && (
         <div>
-          <label htmlFor="nc-category" className="block text-xs font-medium mb-1">Category</label>
+          <label htmlFor="nc-category" className="field-label">Category</label>
           <select id="nc-category" name="categoryId" className={input} defaultValue="">
             <option value="">None</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -88,13 +88,13 @@ export function NewCaseForm({ patientId, categories }: { patientId: string; cate
         </div>
       )}
       <div>
-        <label htmlFor="nc-intake" className="block text-xs font-medium mb-1">Intake notes</label>
+        <label htmlFor="nc-intake" className="field-label">Intake notes</label>
         <textarea id="nc-intake" name="intake" required rows={4} maxLength={20000} className={input} />
       </div>
       <input type="hidden" name="status" value="intake" />
       {error && <p className="text-xs text-[var(--color-danger)]">{error}</p>}
       <div className="flex gap-2">
-        <button type="submit" disabled={busy} className="focus-ring bg-[var(--color-charcoal)] text-white text-xs font-semibold px-3 py-1.5 rounded hover:bg-black disabled:opacity-60">
+        <button type="submit" disabled={busy} className="btn btn-primary text-xs px-3 py-1.5 min-h-0">
           {busy ? 'Opening…' : 'Open case'}
         </button>
         <button type="button" onClick={() => setOpen(false)} className="focus-ring text-xs text-[var(--color-ink-soft)] hover:underline">Cancel</button>

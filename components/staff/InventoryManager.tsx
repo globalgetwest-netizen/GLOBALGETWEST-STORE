@@ -52,7 +52,7 @@ export function InventoryManager({ rows }: { rows: Row[] }) {
       <input
         type="text" placeholder="Search by product, variant, or SKU..." value={filter}
         onChange={(e) => setFilter(e.target.value)}
-        className="focus-ring w-full max-w-sm rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm mb-4"
+        className="field max-w-sm mb-4"
       />
 
       <div className="border border-[var(--color-border)] rounded-lg overflow-hidden bg-white/60">
@@ -96,28 +96,28 @@ export function InventoryManager({ rows }: { rows: Row[] }) {
             <p className="text-sm text-[var(--color-ink-soft)]">Current: {adjusting.stock}</p>
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">Quantity change (+/-)</label>
-              <input
+              <label htmlFor="inv-quantity-change" className="field-label">Quantity change (+/-)</label>
+              <input id="inv-quantity-change"
                 type="number" value={quantityChange} onChange={(e) => setQuantityChange(Number(e.target.value))}
-                className="focus-ring w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                className="field"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">Reason</label>
-              <select
+              <label htmlFor="inv-reason" className="field-label">Reason</label>
+              <select id="inv-reason"
                 value={reason} onChange={(e) => setReason(e.target.value)}
-                className="focus-ring w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm capitalize"
+                className="field capitalize"
               >
                 {REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">Note (optional)</label>
-              <textarea
+              <label htmlFor="inv-note-optional" className="field-label">Note (optional)</label>
+              <textarea id="inv-note-optional"
                 value={note} onChange={(e) => setNote(e.target.value)} rows={2}
-                className="focus-ring w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                className="field"
               />
             </div>
 

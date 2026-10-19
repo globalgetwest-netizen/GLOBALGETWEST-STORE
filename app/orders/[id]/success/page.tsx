@@ -135,7 +135,7 @@ export default async function OrderSuccessPage({
       <div className="mt-10 text-center">
         <Link
           href="/products"
-          className="focus-ring inline-block bg-[var(--color-charcoal)] text-white font-semibold px-7 py-3 rounded hover:bg-black transition-colors"
+          className="btn btn-primary"
         >
           Continue shopping
         </Link>

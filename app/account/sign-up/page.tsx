@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabaseBrowserClient } from '@/lib/supabase/client';
 import { readGuestCart, restoreGuestCart } from '@/lib/guestCart';
+import { safeNextPath } from '@/lib/safeNext';
+import { AuthCard, FormNotice } from '@/components/AuthCard';
+import { PasswordInput } from '@/components/PasswordInput';
 
 export default function SignUpPage() {
   return (
@@ -22,8 +25,7 @@ function SignUpForm() {
   const [loading, setLoading] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const next = searchParams.get('next') ?? '/';
+  const next = safeNextPath(useSearchParams().get('next'));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,13 +38,15 @@ function SignUpForm() {
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: fullName.trim() },
         emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
 
     if (signUpError) {
-      setError(signUpError.message);
+      setError(/already registered/i.test(signUpError.message)
+        ? 'An account with this email already exists. Please sign in instead.'
+        : signUpError.message);
       setLoading(false);
       return;
     }
@@ -61,57 +65,62 @@ function SignUpForm() {
 
   if (checkEmail) {
     return (
-      <div className="mx-auto max-w-sm px-4 py-20 text-center">
-        <h1 className="font-display text-2xl mb-3">Check your email</h1>
-        <p className="text-[var(--color-ink-soft)] text-sm">
-          We&apos;ve sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
+      <AuthCard
+        eyebrow="One more step"
+        title="Check your email"
+        subtitle={<>We&apos;ve sent a confirmation link to <strong className="text-[var(--color-ink)]">{email}</strong>. Open it to activate your account.</>}
+      >
+        <p className="text-sm text-[var(--color-ink-soft)] leading-relaxed">
+          Can&apos;t find it? Check your Spam or Promotions folder. The link comes from GLOBALGETWEST and works once.
         </p>
-      </div>
+      </AuthCard>
     );
   }
 
   return (
-    <div className="mx-auto max-w-sm px-4 py-16">
-      <h1 className="font-display text-2xl mb-6">Create your account</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <AuthCard
+      eyebrow="Join GLOBALGETWEST"
+      title="Create your account"
+      subtitle="Track orders, keep your receipts and, if you choose, your health records — in one place."
+      footer={
+        <>
+          Already have an account?{' '}
+          <Link href={`/account/sign-in?next=${encodeURIComponent(next)}`} className="focus-ring text-[var(--color-forest)] font-semibold hover:underline">
+            Sign in
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium mb-1.5">Full name</label>
+          <label htmlFor="signup-name" className="field-label">Full name</label>
           <input
-            type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)}
-            className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+            id="signup-name" type="text" required autoComplete="name"
+            value={fullName} onChange={(e) => setFullName(e.target.value)} className="field"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1.5">Email</label>
+          <label htmlFor="signup-email" className="field-label">Email</label>
           <input
-            type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-            className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+            id="signup-email" type="email" required autoComplete="email" inputMode="email"
+            value={email} onChange={(e) => setEmail(e.target.value)} className="field"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1.5">Password</label>
-          <input
-            type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)}
-            className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          <label htmlFor="signup-password" className="field-label">Password</label>
+          <PasswordInput
+            id="signup-password" value={password} onChange={setPassword}
+            autoComplete="new-password" minLength={8} describedBy="signup-password-hint"
           />
+          <p id="signup-password-hint" className="field-hint">At least 8 characters.</p>
         </div>
 
-        {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
+        {error && <FormNotice tone="error">{error}</FormNotice>}
 
-        <button
-          type="submit" disabled={loading}
-          className="focus-ring w-full bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black disabled:opacity-60"
-        >
-          {loading ? 'Creating account…' : 'Create Account'}
+        <button type="submit" disabled={loading} className="btn btn-primary w-full">
+          {loading ? 'Creating your account…' : 'Create account'}
         </button>
       </form>
-
-      <p className="text-sm text-[var(--color-ink-soft)] mt-6 text-center">
-        Already have an account?{' '}
-        <Link href={`/account/sign-in?next=${encodeURIComponent(next)}`} className="focus-ring text-[var(--color-forest)] font-medium hover:underline">
-          Sign in
-        </Link>
-      </p>
-    </div>
+    </AuthCard>
   );
 }

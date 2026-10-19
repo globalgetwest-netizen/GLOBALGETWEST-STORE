@@ -39,7 +39,7 @@ export function CaseAssigner({ caseId, current, practitioners }: {
     <div>
       <select
         aria-label="Assigned practitioner" value={value} disabled={busy} onChange={(e) => change(e.target.value)}
-        className="focus-ring rounded-md border border-[var(--color-border)] bg-white px-2 py-1 text-sm max-w-[220px] disabled:opacity-60"
+        className="field max-w-[220px] disabled:opacity-60"
       >
         <option value="">Unassigned</option>
         {practitioners.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}

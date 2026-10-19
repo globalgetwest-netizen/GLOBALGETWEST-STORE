@@ -9,7 +9,7 @@ import {
   CASE_OUTCOMES, OPEN_STATUSES, OUTCOME_LABELS, STATUS_LABELS, type CaseOutcome, type CaseStatus,
 } from '@/lib/health/labels';
 
-const input = 'focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm';
+const input = 'field';
 
 export function CaseControls({ caseId, status, outcome, condition }: {
   caseId: string;
@@ -65,7 +65,7 @@ export function CaseControls({ caseId, status, outcome, condition }: {
       ) : (
         <>
           <div>
-            <label htmlFor="cc-status" className="block text-sm font-medium mb-1.5">Status</label>
+            <label htmlFor="cc-status" className="field-label">Status</label>
             <select
               id="cc-status" value={status} disabled={busy}
               onChange={(e) => send({ action: 'status', status: e.target.value })}
@@ -78,14 +78,14 @@ export function CaseControls({ caseId, status, outcome, condition }: {
           {panel === 'close' ? (
             <form onSubmit={(e) => { e.preventDefault(); send({ action: 'close', outcome: newOutcome, note }); }} className="space-y-3 border-t border-[var(--color-border)] pt-4">
               <div>
-                <label htmlFor="cc-outcome" className="block text-sm font-medium mb-1.5">Outcome</label>
+                <label htmlFor="cc-outcome" className="field-label">Outcome</label>
                 <select id="cc-outcome" required value={newOutcome} onChange={(e) => setNewOutcome(e.target.value)} className={input}>
                   <option value="">Choose what actually happened…</option>
                   {CASE_OUTCOMES.map((o) => <option key={o} value={o}>{OUTCOME_LABELS[o]}</option>)}
                 </select>
               </div>
               <div>
-                <label htmlFor="cc-note" className="block text-sm font-medium mb-1.5">Outcome note</label>
+                <label htmlFor="cc-note" className="field-label">Outcome note</label>
                 <textarea
                   id="cc-note" required rows={4} maxLength={5000} value={note} onChange={(e) => setNote(e.target.value)} className={input}
                   placeholder="What happened, with evidence where you have it (e.g. follow-up readings, lab results). Visible to the patient."
@@ -93,7 +93,7 @@ export function CaseControls({ caseId, status, outcome, condition }: {
                 <p className="text-xs text-[var(--color-ink-muted)] mt-1">Record the real result, including no change, worsening or loss to follow-up.</p>
               </div>
               <div className="flex gap-2">
-                <button type="submit" disabled={busy} className="focus-ring bg-[var(--color-charcoal)] text-white text-sm font-semibold px-4 py-2 rounded hover:bg-black disabled:opacity-60">
+                <button type="submit" disabled={busy} className="btn btn-primary">
                   {busy ? 'Closing…' : 'Close case'}
                 </button>
                 <button type="button" onClick={() => setPanel('none')} className="focus-ring text-sm text-[var(--color-ink-soft)] hover:underline">Cancel</button>
@@ -101,10 +101,10 @@ export function CaseControls({ caseId, status, outcome, condition }: {
             </form>
           ) : panel === 'condition' ? (
             <form onSubmit={(e) => { e.preventDefault(); send({ action: 'condition', condition: newCondition }); }} className="space-y-3 border-t border-[var(--color-border)] pt-4">
-              <label htmlFor="cc-condition" className="block text-sm font-medium">Condition</label>
+              <label htmlFor="cc-condition" className="field-label">Condition</label>
               <input id="cc-condition" required maxLength={200} value={newCondition} onChange={(e) => setNewCondition(e.target.value)} className={input} />
               <div className="flex gap-2">
-                <button type="submit" disabled={busy} className="focus-ring bg-[var(--color-charcoal)] text-white text-sm font-semibold px-4 py-2 rounded hover:bg-black disabled:opacity-60">Save</button>
+                <button type="submit" disabled={busy} className="btn btn-primary">Save</button>
                 <button type="button" onClick={() => setPanel('none')} className="focus-ring text-sm text-[var(--color-ink-soft)] hover:underline">Cancel</button>
               </div>
             </form>

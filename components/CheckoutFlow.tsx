@@ -190,13 +190,13 @@ export function CheckoutFlow({
             <Field label="State / region" optional autoComplete="address-level1" value={address.region} onChange={setField('region')} />
             <Field label="Postal code" optional autoComplete="postal-code" value={address.postalCode} onChange={setField('postalCode')} />
             <div>
-              <label htmlFor="checkout-country" className="block text-[13px] font-medium mb-1.5">Country</label>
+              <label htmlFor="checkout-country" className="field-label">Country</label>
               <select
                 id="checkout-country"
                 autoComplete="country"
                 value={address.countryCode}
                 onChange={(e) => setField('countryCode')(e.target.value)}
-                className="focus-ring w-full h-11 rounded-md border border-[var(--color-border)] bg-white px-3 text-sm"
+                className="field"
               >
                 {COUNTRIES.map((c) => (
                   <option key={c.code} value={c.code}>{c.name}</option>
@@ -217,7 +217,7 @@ export function CheckoutFlow({
           <button
             onClick={fetchRates}
             disabled={loading || !address.fullName || !address.phone || !address.line1 || !address.city || (isGuest && !emailValid)}
-            className="focus-ring mt-6 w-full sm:w-auto bg-[var(--color-charcoal)] text-white font-semibold px-7 py-3 rounded hover:bg-black transition-colors disabled:opacity-40"
+            className="btn btn-primary mt-6 w-full sm:w-auto"
           >
             {loading && step === 'address' ? 'Finding delivery options…' : 'Continue to delivery'}
           </button>
@@ -250,7 +250,7 @@ export function CheckoutFlow({
           {rates && rates.length > 0 && (
             <button
               onClick={() => setStep('payment')}
-              className="focus-ring mt-6 w-full sm:w-auto bg-[var(--color-charcoal)] text-white font-semibold px-7 py-3 rounded hover:bg-black transition-colors"
+              className="btn btn-primary mt-6 w-full sm:w-auto"
             >
               Continue to payment
             </button>
@@ -285,7 +285,7 @@ export function CheckoutFlow({
           <button
             onClick={submitOrder}
             disabled={loading}
-            className="focus-ring mt-6 w-full bg-[var(--color-charcoal)] text-white font-semibold px-6 py-4 rounded hover:bg-black transition-colors disabled:opacity-50"
+            className="btn btn-primary mt-6 w-full py-4"
           >
             {loading
               ? (isAgent ? 'Placing your order…' : 'Taking you to secure payment…')
@@ -412,11 +412,13 @@ function Choice({
 }) {
   return (
     <label
-      className={`flex items-center gap-3.5 rounded-md border px-4 py-3.5 cursor-pointer text-sm transition-colors ${
-        checked ? 'border-[var(--color-charcoal)] bg-[var(--color-parchment-warm)]' : 'border-[var(--color-border)] hover:border-[var(--color-ink-muted)]'
+      className={`flex items-center gap-3.5 rounded-[0.625rem] border px-4 py-3.5 cursor-pointer text-sm transition-[border-color,box-shadow,background-color] ${
+        checked
+          ? 'border-[var(--color-forest)] bg-[var(--color-parchment-warm)] shadow-[0_0_0_3px_rgba(192,138,52,0.18)]'
+          : 'border-[#D9D9D4] hover:border-[#B9B9B2]'
       }`}
     >
-      <input type="radio" name={name} checked={checked} onChange={onChange} className="accent-[var(--color-charcoal)] w-4 h-4" />
+      <input type="radio" name={name} checked={checked} onChange={onChange} />
       <span className="flex-1">
         <span className="block font-medium">{title}</span>
         {detail && <span className="block text-xs text-[var(--color-ink-soft)] mt-0.5">{detail}</span>}
@@ -435,7 +437,7 @@ function Field({
   const id = `checkout-${label.toLowerCase().replace(/[^a-z]+/g, '-')}`;
   return (
     <div className={className}>
-      <label htmlFor={id} className="block text-[13px] font-medium mb-1.5">
+      <label htmlFor={id} className="field-label">
         {label}
         {optional && <span className="font-normal text-[var(--color-ink-muted)]"> (optional)</span>}
       </label>
@@ -446,7 +448,7 @@ function Field({
         required={!optional}
         autoComplete={autoComplete}
         onChange={(e) => onChange(e.target.value)}
-        className="focus-ring w-full h-11 rounded-md border border-[var(--color-border)] bg-white px-3 text-sm transition-colors hover:border-[var(--color-ink-muted)]"
+        className="field"
       />
       {hint && <p className="mt-1 text-xs text-[var(--color-ink-muted)]">{hint}</p>}
     </div>

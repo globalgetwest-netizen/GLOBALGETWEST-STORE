@@ -21,7 +21,7 @@ export interface PractitionerListItem {
   open_cases: number;
 }
 
-const input = 'focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm';
+const input = 'field';
 
 function stateOf(p: PractitionerListItem): { label: string; tone: string } {
   const today = new Date().toISOString().slice(0, 10);
@@ -88,34 +88,34 @@ export function PractitionerManager({ initial, countries }: {
             <p className="text-xs text-[var(--color-ink-soft)] mt-1">They must already have an account (normal sign-up). Adding them gives no access until you verify the licence.</p>
           </div>
           <div>
-            <label htmlFor="pm-email" className="block text-sm font-medium mb-1.5">Account email</label>
+            <label htmlFor="pm-email" className="field-label">Account email</label>
             <input id="pm-email" name="email" type="email" required className={input} />
           </div>
           <div>
-            <label htmlFor="pm-name" className="block text-sm font-medium mb-1.5">Name shown to patients</label>
+            <label htmlFor="pm-name" className="field-label">Name shown to patients</label>
             <input id="pm-name" name="displayName" required maxLength={120} placeholder="Dr Ama Mensah" className={input} />
           </div>
           <div>
-            <label htmlFor="pm-specialty" className="block text-sm font-medium mb-1.5">Specialty <span className="font-normal text-[var(--color-ink-muted)]">(optional)</span></label>
+            <label htmlFor="pm-specialty" className="field-label">Specialty <span className="font-normal text-[var(--color-ink-muted)]">(optional)</span></label>
             <input id="pm-specialty" name="specialty" maxLength={120} placeholder="Medical herbalist" className={input} />
           </div>
           <div>
-            <label htmlFor="pm-licence" className="block text-sm font-medium mb-1.5">Licence / registration number</label>
+            <label htmlFor="pm-licence" className="field-label">Licence / registration number</label>
             <input id="pm-licence" name="licenseNumber" required maxLength={80} className={input} />
           </div>
           <div>
-            <label htmlFor="pm-body" className="block text-sm font-medium mb-1.5">Licensing body</label>
+            <label htmlFor="pm-body" className="field-label">Licensing body</label>
             <input id="pm-body" name="licensingBody" required maxLength={160} placeholder="e.g. Traditional Medicine Practice Council (Ghana)" className={input} />
           </div>
           <div>
-            <label htmlFor="pm-country" className="block text-sm font-medium mb-1.5">Issuing country</label>
+            <label htmlFor="pm-country" className="field-label">Issuing country</label>
             <select id="pm-country" name="countryCode" required className={input} defaultValue="">
               <option value="">Choose…</option>
               {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
             </select>
           </div>
           <div>
-            <label htmlFor="pm-expires" className="block text-sm font-medium mb-1.5">Licence expires <span className="font-normal text-[var(--color-ink-muted)]">(if stated)</span></label>
+            <label htmlFor="pm-expires" className="field-label">Licence expires <span className="font-normal text-[var(--color-ink-muted)]">(if stated)</span></label>
             <input id="pm-expires" name="licenseExpiresOn" type="date" className={input} />
           </div>
           <div className="sm:col-span-2 flex gap-3">

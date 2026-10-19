@@ -8,7 +8,7 @@ import { SEXES, SEX_LABELS } from '@/lib/health/labels';
 import { FileInput } from '@/components/health/FileInput';
 import { ClaimCodeNotice } from '@/components/health/ClaimCodeNotice';
 
-const input = 'focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm';
+const input = 'field';
 
 export function NewPatientForm({ countries, categories, consentStatement, consentPoints }: {
   countries: { code: string; name: string }[];
@@ -53,7 +53,7 @@ export function NewPatientForm({ countries, categories, consentStatement, consen
         <ClaimCodeNotice code={created.claimCode} expiresAt={created.claimCodeExpiresAt} />
         <Link
           href={`/practitioner/cases/${created.caseId}`}
-          className="focus-ring inline-block bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black"
+          className="btn btn-primary"
         >
           Go to the case
         </Link>
@@ -67,31 +67,31 @@ export function NewPatientForm({ countries, categories, consentStatement, consen
         <h2 className="font-display text-xl mb-4">Patient</h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
-            <label htmlFor="np-name" className="block text-sm font-medium mb-1.5">Full name</label>
+            <label htmlFor="np-name" className="field-label">Full name</label>
             <input id="np-name" name="fullName" required maxLength={120} className={input} />
           </div>
           <div>
-            <label htmlFor="np-dob" className="block text-sm font-medium mb-1.5">Date of birth <span className="font-normal text-[var(--color-ink-muted)]">(if known)</span></label>
+            <label htmlFor="np-dob" className="field-label">Date of birth <span className="font-normal text-[var(--color-ink-muted)]">(if known)</span></label>
             <input id="np-dob" name="dateOfBirth" type="date" max={new Date().toISOString().slice(0, 10)} className={input} />
           </div>
           <div>
-            <label htmlFor="np-sex" className="block text-sm font-medium mb-1.5">Sex</label>
+            <label htmlFor="np-sex" className="field-label">Sex</label>
             <select id="np-sex" name="sex" className={input} defaultValue="">
               <option value="">Not recorded</option>
               {SEXES.map((s) => <option key={s} value={s}>{SEX_LABELS[s]}</option>)}
             </select>
           </div>
           <div>
-            <label htmlFor="np-phone" className="block text-sm font-medium mb-1.5">Phone / WhatsApp</label>
+            <label htmlFor="np-phone" className="field-label">Phone / WhatsApp</label>
             <input id="np-phone" name="phone" type="tel" maxLength={40} className={input} />
           </div>
           <div>
-            <label htmlFor="np-email" className="block text-sm font-medium mb-1.5">Email</label>
+            <label htmlFor="np-email" className="field-label">Email</label>
             <input id="np-email" name="email" type="email" maxLength={254} className={input} />
             <p className="text-xs text-[var(--color-ink-muted)] mt-1">If given, the patient must sign in with this email to see the record.</p>
           </div>
           <div>
-            <label htmlFor="np-country" className="block text-sm font-medium mb-1.5">Country</label>
+            <label htmlFor="np-country" className="field-label">Country</label>
             <select id="np-country" name="countryCode" required className={input} defaultValue="">
               <option value="">Choose…</option>
               {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
@@ -104,18 +104,18 @@ export function NewPatientForm({ countries, categories, consentStatement, consen
         <h2 className="font-display text-xl mb-4">First case</h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="np-condition" className="block text-sm font-medium mb-1.5">Condition</label>
+            <label htmlFor="np-condition" className="field-label">Condition</label>
             <input id="np-condition" name="condition" required maxLength={200} placeholder="e.g. Hypertension" className={input} />
           </div>
           <div>
-            <label htmlFor="np-category" className="block text-sm font-medium mb-1.5">Category <span className="font-normal text-[var(--color-ink-muted)]">(optional)</span></label>
+            <label htmlFor="np-category" className="field-label">Category <span className="font-normal text-[var(--color-ink-muted)]">(optional)</span></label>
             <select id="np-category" name="categoryId" className={input} defaultValue="">
               <option value="">None</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <div className="sm:col-span-2">
-            <label htmlFor="np-intake" className="block text-sm font-medium mb-1.5">Intake notes</label>
+            <label htmlFor="np-intake" className="field-label">Intake notes</label>
             <textarea
               id="np-intake" name="intake" required rows={6} maxLength={20000} className={input}
               placeholder="Presenting complaint, history, current medicines, allergies, observations (e.g. BP), what was discussed."
@@ -123,7 +123,7 @@ export function NewPatientForm({ countries, categories, consentStatement, consen
             <p className="text-xs text-[var(--color-ink-muted)] mt-1">Visible to the patient. Entries can’t be edited after saving — use a correction.</p>
           </div>
           <div>
-            <label htmlFor="np-status" className="block text-sm font-medium mb-1.5">Starting status</label>
+            <label htmlFor="np-status" className="field-label">Starting status</label>
             <select id="np-status" name="status" className={input} defaultValue="intake">
               <option value="intake">Intake — assessment not finished</option>
               <option value="active">In treatment</option>
@@ -150,7 +150,7 @@ export function NewPatientForm({ countries, categories, consentStatement, consen
       {error && <p className="text-sm text-[var(--color-danger)]">{error}</p>}
       <button
         type="submit" disabled={saving}
-        className="focus-ring bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black disabled:opacity-60"
+        className="btn btn-primary"
       >
         {saving ? 'Saving…' : 'Register patient and open case'}
       </button>

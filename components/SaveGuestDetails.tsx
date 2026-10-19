@@ -49,12 +49,12 @@ export function SaveGuestDetails({ email: initialEmail }: { email: string }) {
       <div className="flex gap-2">
         <input
           type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-          className="focus-ring flex-1 rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="field flex-1"
         />
         <button
           onClick={save}
           disabled={status === 'loading' || !email.trim()}
-          className="focus-ring bg-[var(--color-charcoal)] text-white font-semibold px-4 py-2 rounded hover:bg-black disabled:opacity-60"
+          className="btn btn-primary"
         >
           {status === 'loading' ? 'Saving…' : 'Save my details'}
         </button>

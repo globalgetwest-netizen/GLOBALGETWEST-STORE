@@ -61,11 +61,11 @@ export function FileInput({ files, onChange, label = 'Photos or documents (optio
 
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-medium mb-1.5">{label}</label>
+      <label htmlFor={id} className="field-label">{label}</label>
       <input
         id={id} type="file" multiple accept={ACCEPT}
         onChange={(e) => { add(e.target.files); e.target.value = ''; }}
-        className="focus-ring block w-full text-sm text-[var(--color-ink-soft)] file:mr-3 file:rounded file:border file:border-[var(--color-border)] file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-[var(--color-ink)] hover:file:bg-[var(--color-parchment-warm)]"
+        className="field"
       />
       <p className="text-xs text-[var(--color-ink-muted)] mt-1">JPG, PNG, WEBP, HEIC or PDF · up to {MAX_FILES} files · private to your record</p>
       {working && <p className="text-xs text-[var(--color-ink-soft)] mt-1">Preparing files…</p>}

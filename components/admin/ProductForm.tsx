@@ -1,6 +1,6 @@
 'use client';
 // components/admin/ProductForm.tsx
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseBrowserClient } from '@/lib/supabase/client';
 
@@ -166,11 +166,11 @@ export function ProductForm({
             onChange={(v) => { setSlugManuallyEdited(true); updateField('slug', slugify(v)); }}
           />
           <div>
-            <label className="block text-sm font-medium mb-1.5">Category</label>
-            <select
+            <label htmlFor="pf-category" className="field-label">Category</label>
+            <select id="pf-category"
               value={form.category_id}
               onChange={(e) => updateField('category_id', e.target.value)}
-              className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+              className="field"
             >
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -274,7 +274,7 @@ export function ProductForm({
                   const file = e.target.files?.[0];
                   if (file) handleFileUpload(i, file);
                 }}
-                className="focus-ring w-full text-xs"
+                className="field"
               />
               {uploadingIndex === i && <p className="text-xs text-[var(--color-ink-soft)]">Uploading…</p>}
               <TextField label="Alt text" value={img.alt_text} onChange={(val) => updateImage(i, { alt_text: val })} compact required={false} />
@@ -297,12 +297,13 @@ export function ProductForm({
 function TextField({
   label, value, onChange, required = true, compact = false,
 }: { label: string; value: string; onChange: (v: string) => void; required?: boolean; compact?: boolean }) {
+  const id = useId();
   return (
     <div>
-      <label className={`block font-medium mb-1.5 ${compact ? 'text-xs' : 'text-sm'}`}>{label}</label>
+      <label htmlFor={id} className={`field-label ${compact ? 'text-xs' : ''}`}>{label}</label>
       <input
-        type="text" required={required} value={value} onChange={(e) => onChange(e.target.value)}
-        className={`focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 ${compact ? 'py-1.5 text-xs' : 'py-2 text-sm'}`}
+        id={id} type="text" required={required} value={value} onChange={(e) => onChange(e.target.value)}
+        className={`field ${compact ? 'min-h-0 py-1.5 text-xs' : ''}`}
       />
     </div>
   );
@@ -311,12 +312,13 @@ function TextField({
 function NumberField({
   label, value, onChange, compact = false,
 }: { label: string; value: number; onChange: (v: number) => void; compact?: boolean }) {
+  const id = useId();
   return (
     <div>
-      <label className={`block font-medium mb-1.5 ${compact ? 'text-xs' : 'text-sm'}`}>{label}</label>
+      <label htmlFor={id} className={`field-label ${compact ? 'text-xs' : ''}`}>{label}</label>
       <input
-        type="number" step="0.01" min="0" value={value} onChange={(e) => onChange(Number(e.target.value))}
-        className={`focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 ${compact ? 'py-1.5 text-xs' : 'py-2 text-sm'}`}
+        id={id} type="number" step="0.01" min="0" value={value} onChange={(e) => onChange(Number(e.target.value))}
+        className={`field ${compact ? 'min-h-0 py-1.5 text-xs' : ''}`}
       />
     </div>
   );
@@ -325,12 +327,13 @@ function NumberField({
 function TextArea({
   label, value, onChange, required = true,
 }: { label: string; value: string; onChange: (v: string) => void; required?: boolean }) {
+  const id = useId();
   return (
     <div>
-      <label className="block text-sm font-medium mb-1.5">{label}</label>
+      <label htmlFor={id} className="field-label">{label}</label>
       <textarea
-        required={required} value={value} onChange={(e) => onChange(e.target.value)} rows={4}
-        className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+        id={id} required={required} value={value} onChange={(e) => onChange(e.target.value)} rows={4}
+        className="field"
       />
     </div>
   );

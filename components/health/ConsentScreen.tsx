@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import type { ConsentSection } from '@/lib/health/consent';
 import { SEXES, SEX_LABELS } from '@/lib/health/labels';
 
-const input = 'focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm';
+const input = 'field';
 
 export function ConsentScreen({
   sections, statement, version, countries, defaultName, defaultCountry,
@@ -90,26 +90,26 @@ export function ConsentScreen({
         {mode === 'new' ? (
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
-              <label htmlFor="c-name" className="block text-sm font-medium mb-1.5">Full name</label>
+              <label htmlFor="c-name" className="field-label">Full name</label>
               <input id="c-name" required value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={120} className={input} />
             </div>
             <div>
-              <label htmlFor="c-dob" className="block text-sm font-medium mb-1.5">Date of birth</label>
+              <label htmlFor="c-dob" className="field-label">Date of birth</label>
               <input id="c-dob" type="date" required value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} max={new Date().toISOString().slice(0, 10)} className={input} />
             </div>
             <div>
-              <label htmlFor="c-sex" className="block text-sm font-medium mb-1.5">Sex</label>
+              <label htmlFor="c-sex" className="field-label">Sex</label>
               <select id="c-sex" value={sex} onChange={(e) => setSex(e.target.value)} className={input}>
                 <option value="">Choose…</option>
                 {SEXES.map((s) => <option key={s} value={s}>{SEX_LABELS[s]}</option>)}
               </select>
             </div>
             <div>
-              <label htmlFor="c-phone" className="block text-sm font-medium mb-1.5">Phone / WhatsApp <span className="font-normal text-[var(--color-ink-muted)]">(optional)</span></label>
+              <label htmlFor="c-phone" className="field-label">Phone / WhatsApp <span className="font-normal text-[var(--color-ink-muted)]">(optional)</span></label>
               <input id="c-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={40} className={input} />
             </div>
             <div>
-              <label htmlFor="c-country" className="block text-sm font-medium mb-1.5">Country</label>
+              <label htmlFor="c-country" className="field-label">Country</label>
               <select id="c-country" required value={countryCode} onChange={(e) => setCountryCode(e.target.value)} className={input}>
                 <option value="">Choose…</option>
                 {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
@@ -118,7 +118,7 @@ export function ConsentScreen({
           </div>
         ) : (
           <div className="max-w-xs">
-            <label htmlFor="c-code" className="block text-sm font-medium mb-1.5">Your record code</label>
+            <label htmlFor="c-code" className="field-label">Your record code</label>
             <input
               id="c-code" required value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="ABCD-2345" maxLength={12}
               className={`${input} tracking-[0.2em] font-medium uppercase`}
@@ -138,7 +138,7 @@ export function ConsentScreen({
 
         <button
           type="submit" disabled={saving || !agreed}
-          className="focus-ring mt-6 bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black disabled:opacity-60"
+          className="btn btn-primary mt-6"
         >
           {saving ? 'Saving…' : mode === 'new' ? 'Agree and create my record' : 'Agree and link my record'}
         </button>

@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FileInput } from '@/components/health/FileInput';
 
-const input = 'focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm';
+const input = 'field';
 
 export function RequestConsultationForm({ categories }: { categories: { id: string; name: string }[] }) {
   const [open, setOpen] = useState(false);
@@ -61,12 +61,12 @@ export function RequestConsultationForm({ categories }: { categories: { id: stri
       </div>
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label htmlFor="rc-condition" className="block text-sm font-medium mb-1.5">What would you like help with?</label>
+          <label htmlFor="rc-condition" className="field-label">What would you like help with?</label>
           <input id="rc-condition" required maxLength={200} value={condition} onChange={(e) => setCondition(e.target.value)} placeholder="e.g. High blood pressure" className={input} />
         </div>
         {categories.length > 0 && (
           <div>
-            <label htmlFor="rc-category" className="block text-sm font-medium mb-1.5">Area <span className="font-normal text-[var(--color-ink-muted)]">(optional)</span></label>
+            <label htmlFor="rc-category" className="field-label">Area <span className="font-normal text-[var(--color-ink-muted)]">(optional)</span></label>
             <select id="rc-category" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className={input}>
               <option value="">Not sure</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -75,7 +75,7 @@ export function RequestConsultationForm({ categories }: { categories: { id: stri
         )}
       </div>
       <div>
-        <label htmlFor="rc-body" className="block text-sm font-medium mb-1.5">Describe your symptoms, how long you’ve had them, and any medicines you take</label>
+        <label htmlFor="rc-body" className="field-label">Describe your symptoms, how long you’ve had them, and any medicines you take</label>
         <textarea id="rc-body" required rows={5} maxLength={20000} value={body} onChange={(e) => setBody(e.target.value)} className={input} />
       </div>
       <FileInput files={files} onChange={setFiles} label="Photos or test results (optional)" />
@@ -83,7 +83,7 @@ export function RequestConsultationForm({ categories }: { categories: { id: stri
       <div className="flex gap-3 items-center">
         <button
           type="submit" disabled={saving}
-          className="focus-ring bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black disabled:opacity-60"
+          className="btn btn-primary"
         >
           {saving ? 'Sending…' : 'Send request'}
         </button>

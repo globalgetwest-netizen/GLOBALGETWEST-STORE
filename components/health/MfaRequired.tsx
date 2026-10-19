@@ -31,7 +31,7 @@ export function MfaRequired({ hasFactor, next, audience }: {
       </p>
       <Link
         href={href}
-        className="focus-ring inline-block bg-[var(--color-charcoal)] text-white font-semibold px-5 py-2.5 rounded hover:bg-black"
+        className="btn btn-primary"
       >
         {hasFactor ? 'Enter authenticator code' : 'Set up two-step sign-in'}
       </Link>

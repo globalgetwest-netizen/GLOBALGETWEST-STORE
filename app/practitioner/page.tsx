@@ -57,7 +57,7 @@ export default async function CaseloadPage({ searchParams }: { searchParams: Pro
           <h1 className="font-display text-3xl">My caseload</h1>
           <p className="text-sm text-[var(--color-ink-soft)] mt-1">Cases assigned to you. Open one to read the timeline and add entries.</p>
         </div>
-        <Link href="/practitioner/patients/new" className="focus-ring bg-[var(--color-charcoal)] text-white text-sm font-semibold px-4 py-2 rounded hover:bg-black">
+        <Link href="/practitioner/patients/new" className="btn btn-primary">
           Register a patient
         </Link>
       </div>

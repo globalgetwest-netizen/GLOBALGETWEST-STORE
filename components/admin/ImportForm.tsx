@@ -105,7 +105,7 @@ export function ImportForm({ categories }: { categories: Category[] }) {
           const file = e.target.files?.[0];
           if (file) handleFile(file);
         }}
-        className="focus-ring mb-6"
+        className="field mb-6"
       />
 
       {parseErrors.length > 0 && (

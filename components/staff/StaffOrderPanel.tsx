@@ -69,20 +69,20 @@ export function StaffOrderPanel({
   return (
     <div className="space-y-5">
       <div>
-        <label className="block text-sm font-medium mb-1.5">Update status</label>
-        <select
+        <label htmlFor="sop-update-status" className="field-label">Update status</label>
+        <select id="sop-update-status"
           value={status} disabled={saving} onChange={(e) => updateStatus(e.target.value)}
-          className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm capitalize"
+          className="field capitalize"
         >
           {STAFF_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
 
       <form onSubmit={addNote} className="space-y-2">
-        <label className="block text-sm font-medium">Add a note</label>
-        <textarea
+        <label htmlFor="sop-add-a-note" className="field-label">Add a note</label>
+        <textarea id="sop-add-a-note"
           value={note} onChange={(e) => setNote(e.target.value)} rows={2}
-          className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="field"
         />
         <button
           type="submit" disabled={saving || !note.trim()}

@@ -80,7 +80,7 @@ export default async function HomePage() {
           <div className="flex flex-wrap justify-center gap-4">
             <Link
               href="/products"
-              className="focus-ring inline-block bg-[var(--color-charcoal)] text-white font-semibold px-8 py-3.5 rounded hover:bg-black transition-colors"
+              className="btn btn-primary px-8"
             >
               Shop All Products →
             </Link>

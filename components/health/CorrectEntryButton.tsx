@@ -2,10 +2,11 @@
 // components/health/CorrectEntryButton.tsx
 // Entries can't be edited. "Add correction" writes a new entry that points
 // at this one; the original stays visible, marked as corrected.
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export function CorrectEntryButton({ endpoint, entryId }: { endpoint: string; entryId: string }) {
+  const fieldId = useId();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
@@ -43,18 +44,18 @@ export function CorrectEntryButton({ endpoint, entryId }: { endpoint: string; en
 
   return (
     <form onSubmit={submit} className="w-full mt-2 space-y-2">
-      <label className="block text-xs font-medium text-[var(--color-ink)]">
+      <label htmlFor={fieldId} className="field-label">
         What should it say? The original stays on the record, marked as corrected.
       </label>
-      <textarea
+      <textarea id={fieldId}
         required value={text} onChange={(e) => setText(e.target.value)} rows={3} maxLength={20000}
-        className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm text-[var(--color-ink)]"
+        className="field text-[var(--color-ink)]"
       />
       {error && <p className="text-xs text-[var(--color-danger)]">{error}</p>}
       <div className="flex gap-2">
         <button
           type="submit" disabled={saving || !text.trim()}
-          className="focus-ring bg-[var(--color-charcoal)] text-white text-xs font-semibold px-3 py-1.5 rounded hover:bg-black disabled:opacity-60"
+          className="btn btn-primary text-xs px-3 py-1.5 min-h-0"
         >
           {saving ? 'Saving…' : 'Save correction'}
         </button>

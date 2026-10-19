@@ -55,12 +55,12 @@ export function AddToCartForm({ variants }: { variants: Variant[] }) {
   return (
     <div className="space-y-4">
       <div>
-        <label htmlFor="variant" className="block text-sm font-medium mb-1.5">Size / Form</label>
+        <label htmlFor="variant" className="field-label">Size / Form</label>
         <select
           id="variant"
           value={variantId}
           onChange={(e) => setVariantId(e.target.value)}
-          className="focus-ring w-full rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+          className="field"
         >
           {active.map((v) => (
             <option key={v.id} value={v.id}>
@@ -73,21 +73,21 @@ export function AddToCartForm({ variants }: { variants: Variant[] }) {
 
       <div className="flex items-end gap-3">
         <div>
-          <label htmlFor="qty" className="block text-sm font-medium mb-1.5">Quantity</label>
+          <label htmlFor="qty" className="field-label">Quantity</label>
           <input
             id="qty"
             type="number"
             min={1}
             value={quantity}
             onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
-            className="focus-ring w-20 rounded-md border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+            className="field w-20"
           />
         </div>
 
         <button
           onClick={handleAddToCart}
           disabled={status === 'loading'}
-          className="focus-ring flex-1 bg-[var(--color-charcoal)] text-white font-semibold px-6 py-2.5 rounded hover:bg-black transition-colors disabled:opacity-60"
+          className="btn btn-primary flex-1"
         >
           {status === 'loading' ? 'Adding…' : status === 'added' ? 'Added ✓' : 'Add to Cart'}
         </button>
