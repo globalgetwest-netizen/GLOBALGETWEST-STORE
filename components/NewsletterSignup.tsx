@@ -35,9 +35,12 @@ export function NewsletterSignup() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md">
+    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row sm:flex-wrap gap-3 max-w-md w-full">
+      <label htmlFor="newsletter-email" className="sr-only">Email address</label>
       <input
+        id="newsletter-email"
         type="email"
+        autoComplete="email"
         required
         placeholder="Your email address"
         value={email}
@@ -52,7 +55,7 @@ export function NewsletterSignup() {
         {status === 'loading' ? 'Joining…' : 'Subscribe'}
       </button>
       {status === 'error' && (
-        <p className="text-sm text-[var(--color-danger)] sm:absolute sm:mt-12">{error}</p>
+        <p role="alert" className="basis-full text-sm text-[var(--color-danger)]">{error}</p>
       )}
     </form>
   );

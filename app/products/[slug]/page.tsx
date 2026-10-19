@@ -1,4 +1,5 @@
 // app/products/[slug]/page.tsx
+import { ProductText } from '@/components/ProductText';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getProductBySlug } from '@/lib/catalog';
@@ -81,25 +82,25 @@ export default async function ProductDetailPage({
           {product.description && (
             <section>
               <h2 className="font-semibold mb-1.5">Description</h2>
-              <p className="text-[var(--color-ink-soft)] whitespace-pre-line">{product.description}</p>
+              <ProductText text={product.description} />
             </section>
           )}
           {product.ingredients && (
             <section>
               <h2 className="font-semibold mb-1.5">Ingredients</h2>
-              <p className="text-[var(--color-ink-soft)] whitespace-pre-line">{product.ingredients}</p>
+              <ProductText text={product.ingredients} />
             </section>
           )}
           {product.usage_instructions && (
             <section>
               <h2 className="font-semibold mb-1.5">How to Use</h2>
-              <p className="text-[var(--color-ink-soft)] whitespace-pre-line">{product.usage_instructions}</p>
+              <ProductText text={product.usage_instructions} />
             </section>
           )}
           {product.warnings && (
-            <section className="rounded-md border border-[var(--color-danger)]/30 bg-[var(--color-danger)]/5 p-3.5">
-              <h2 className="font-semibold mb-1 text-[var(--color-danger)]">Warnings</h2>
-              <p className="text-[var(--color-ink-soft)] whitespace-pre-line">{product.warnings}</p>
+            <section className="rounded-lg border border-[var(--color-danger)]/25 bg-[var(--color-danger)]/[0.04] p-4">
+              <h2 className="font-semibold mb-2 text-[var(--color-danger)]">Warnings</h2>
+              <ProductText text={product.warnings} />
             </section>
           )}
         </div>
