@@ -12,7 +12,7 @@ import Image from 'next/image';
 
 const BADGES = [
   { src: '/payment-icons/visa.png', alt: 'Visa', width: 52, height: 17, show: true },
-  { src: '/payment-icons/mastercard.png', alt: 'Mastercard', width: 40, height: 17, show: true },
+  { src: '/payment-icons/mastercard.png', alt: 'Mastercard', width: 76, height: 17, show: true },
   { src: '/payment-icons/apple-pay.png', alt: 'Apple Pay', width: 44, height: 32, show: process.env.ACCEPTS_APPLE_PAY === 'true' },
   { src: '/payment-icons/google-pay.png', alt: 'Google Pay', width: 52, height: 28, show: process.env.ACCEPTS_GOOGLE_PAY === 'true' },
   { src: '/payment-icons/momo.png', alt: 'MTN MoMo', width: 64, height: 30, show: true },

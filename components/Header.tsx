@@ -39,18 +39,22 @@ export async function Header() {
             <span className="font-display text-lg md:text-xl tracking-tight text-[var(--color-ink)]">GLOBALGETWEST</span>
           </Link>
 
-          <form action="/search" className="order-3 md:order-none basis-full md:basis-auto md:flex-1 max-w-2xl">
+          <form action="/search" role="search" className="relative order-3 md:order-none basis-full md:basis-auto md:flex-1 max-w-2xl">
             <label htmlFor="site-search" className="sr-only">Search products</label>
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-ink-muted)]">
+              <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" strokeLinecap="round" />
+            </svg>
             <input
               id="site-search"
               name="q"
               type="search"
-              placeholder="Search products, categories and wellness"
-              className="field px-3.5 text-[var(--color-ink)] bg-[var(--color-parchment-warm)] placeholder:text-[var(--color-ink-soft)]"
+              placeholder="Search products"
+              className="field pl-10 pr-3.5 text-[var(--color-ink)] bg-[var(--color-parchment-warm)] placeholder:text-[var(--color-ink-soft)]"
             />
           </form>
 
-          <nav className="ml-auto md:ml-0 flex items-center gap-3 md:gap-5 text-sm shrink-0">
+          <nav className="ml-auto flex items-center gap-3 md:gap-5 text-sm shrink-0">
             {user && !user.is_anonymous ? (
               <>
                 <Link href="/account/orders" className="focus-ring text-[var(--color-ink-soft)] hover:text-[var(--color-forest)]">

@@ -123,9 +123,9 @@ export default async function HomePage() {
           keeps each full image visible, uncropped, within its grid cell. */}
       {banners && banners.length > 0 && (
         <section className="mx-auto max-w-[1600px] px-4 py-10">
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+          <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4 [scrollbar-width:thin]">
             {banners.map((b) => (
-              <div key={b.id}>
+              <div key={b.id} className="snap-start shrink-0 w-[42%] sm:w-[28%] md:w-[21%] lg:w-[15.5%]">
                 {b.link_url ? (
                   <a
                     href={b.link_url}
@@ -319,8 +319,8 @@ function CategoryTile({ href, label }: { href: string; label: string }) {
       className="focus-ring group flex flex-col items-center gap-3 rounded-lg border border-[var(--color-border)] bg-white p-5 text-center transition-all hover:shadow-lg hover:-translate-y-0.5 hover:border-[var(--color-ochre)]"
     >
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-forest)]/8 text-[var(--color-forest)] transition-colors group-hover:bg-[var(--color-forest)] group-hover:text-[var(--color-parchment)]">
-        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          {iconForCategory(label)}
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          {iconForCategory(href, label)}
         </svg>
       </div>
       <div>
@@ -332,32 +332,35 @@ function CategoryTile({ href, label }: { href: string; label: string }) {
   );
 }
 
-// A small rotating set of distinct icons, picked deterministically from the
-// category name (same name always gets the same icon, but different
-// categories visually differ instead of repeating one identical glyph —
-// the flat repetition was a real weakness on a page with many categories.
-function iconForCategory(label: string): React.ReactNode {
-  const icons: React.ReactNode[] = [
-    <path key="leaf" d="M12 2C8 6 6 9 6 13a6 6 0 0 0 12 0c0-4-2-7-6-11Z M12 10v10" />,
-    <path key="shield" d="M12 2l7 4v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-4z" />,
-    <>
-      <circle key="c1" cx="12" cy="12" r="9" />
-      <path key="c2" d="M8 12h8M12 8v8" />
-    </>,
-    <>
-      <path key="t1" d="M4 8h13a3 3 0 0 1 0 6h-1" />
-      <path key="t2" d="M4 8v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V8" />
-      <path key="t3" d="M6 3v2M9 3v2M12 3v2" />
-    </>,
-    <>
-      <circle key="d1" cx="12" cy="12" r="3" />
-      <path key="d2" d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" />
-    </>,
-    <path key="heart" d="M12 21s-7-4.4-9.5-8.6C.8 9 2.3 5.5 5.6 5c2-.3 3.7.7 4.4 2.2C10.7 5.7 12.4 4.7 14.4 5c3.3.5 4.8 4 3.1 7.4C15 17.6 12 21 12 21z" />,
-  ];
-  let hash = 0;
-  for (let i = 0; i < label.length; i++) hash = (hash * 31 + label.charCodeAt(i)) % icons.length;
-  return icons[hash];
+// An icon that matches what the category is about, chosen from its slug and
+// name (e.g. "liver-detox" → liver). Unknown categories get a botanical leaf.
+function iconForCategory(href: string, label: string): React.ReactNode {
+  const key = `${href} ${label}`.toLowerCase();
+  if (/liver|hepat|detox/.test(key)) {
+    return <path d="M3 9.5C3 6.5 6 5 10 5h7c2.5 0 4 1.6 4 3.6 0 3.4-3.2 5.6-7.4 7L9 17.4c-2 .7-3.6-.5-3.6-2.5V14C4 13.2 3 11.6 3 9.5Z M10 5v5" />;
+  }
+  if (/digest|stomach|gut|ulcer/.test(key)) {
+    return <path d="M9 3v3.5c0 1.6-1.3 2.5-2.6 3.3C4.8 10.8 4 12.3 4 14.3 4 18 7 21 11 21c4.6 0 9-3.3 9-8.3 0-3.3-2.2-5.2-4.6-5.2-1.7 0-2.6 1-3.4 1.9V3" />;
+  }
+  if (/tea|tincture|infusion/.test(key)) {
+    return <><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9Z" /><path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16M8 2.5c-.8 1 .8 2 0 3M12 2.5c-.8 1 .8 2 0 3" /></>;
+  }
+  if (/immun|defen/.test(key)) {
+    return <><path d="M12 2.5l7.5 3v6c0 5-3.4 8.6-7.5 10-4.1-1.4-7.5-5-7.5-10v-6l7.5-3Z" /><path d="M9 12l2 2 4-4" /></>;
+  }
+  if (/onco|cancer|tumou?r/.test(key)) {
+    return <path d="M12 3c2.2 0 3.5 1.7 3.5 3.7 0 2.3-1.6 4.3-3.5 6.5-1.9-2.2-3.5-4.2-3.5-6.5C8.5 4.7 9.8 3 12 3Z M10 14.8 6 21l2.7-.6L10 22l3.4-6.3 M14 14.8 18 21l-2.7-.6L14 22l-1.4-2.6" />;
+  }
+  if (/sti|std|sexual|infect/.test(key)) {
+    return <><path d="M12 2.5l7.5 3v6c0 5-3.4 8.6-7.5 10-4.1-1.4-7.5-5-7.5-10v-6l7.5-3Z" /><path d="M12 8.5v6M9 11.5h6" /></>;
+  }
+  if (/virus|viral|hiv/.test(key)) {
+    return <><circle cx="12" cy="12" r="4.5" /><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" /></>;
+  }
+  if (/health|well|heart|pressure/.test(key)) {
+    return <path d="M12 20.5s-7.5-4.6-9-9.4C2 7.6 4.3 5 7.2 5c1.9 0 3.6 1.1 4.8 2.8C13.2 6.1 14.9 5 16.8 5 19.7 5 22 7.6 21 11.1c-1.5 4.8-9 9.4-9 9.4Z M7 12h2.5l1.5-2.5 2 5 1.5-2.5H17" />;
+  }
+  return <path d="M12 21c-4.5-2-7-5.5-7-10 4 0 7 2 7 6 0-5 3-9 8-10 0 7-3 12-8 14Z M12 21v-4" />;
 }
 
 function TrustItem({ icon, title, label }: { icon: React.ReactNode; title: string; label: string }) {
